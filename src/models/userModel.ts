@@ -35,3 +35,20 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
   const result = await pool.query(query, [email]);
   return result.rows[0] || null;
 };
+
+// Get all users (for admin)
+export const getAllUsers = async (): Promise<User[]> => {
+  const query = `SELECT id, name, email, role, status, created_at FROM users ORDER BY created_at DESC`;
+  const result = await pool.query(query);
+  return result.rows;
+};
+
+// Update user status (for admin)
+export const updateUserStatus = async (
+  id: string,
+  status: string
+): Promise<User | null> => {
+  const query = `UPDATE users SET status = $1 WHERE id = $2 RETURNING id, name, email, role, status, created_at`;
+  const result = await pool.query(query, [status, id]);
+  return result.rows[0] || null;
+};

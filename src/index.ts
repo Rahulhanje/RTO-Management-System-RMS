@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import healthRoutes from "./routes/healthRoutes";
 import roleTestRoutes from "./routes/roleTestRoutes";
+import userRoutes from "./routes/userRoutes";
 import { connectDB } from "./db";
 
 // Load environment variables
@@ -16,6 +17,7 @@ app.use(express.json());
 // Routes
 app.use(healthRoutes);
 app.use(roleTestRoutes);
+app.use(userRoutes);
 
 // Connect to database, then start server
 const startServer = async () => {
