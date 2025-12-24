@@ -10,31 +10,27 @@ export const payChallan = async (req: AuthRequest, res: Response) => {
     const user_id = req.user?.id;
 
     if (!user_id) {
-      return res.status(401).json({ message: "User not authenticated" });
+      return res.status(401).json({ success: false, message: "User not authenticated" });
     }
 
-    // Get the challan
     const challan = await getChallanById(challanId);
 
     if (!challan) {
-      return res.status(404).json({ message: "Challan not found" });
+      return res.status(404).json({ success: false, message: "Challan not found" });
     }
 
-    // Check if already paid
     if (challan.status === "PAID") {
-      return res.status(400).json({ message: "Challan already paid" });
+      return res.status(400).json({ success: false, message: "Challan already paid" });
     }
 
-    // Create payment record
     const payment = await createPayment(challanId, user_id, challan.amount);
 
-    // Update challan status to PAID
     await updateChallanStatus(challanId, "PAID");
 
-    res.status(201).json({ message: "Payment successful", payment });
+    res.status(201).json({ success: true, message: "Payment successful", data: { payment } });
   } catch (error) {
     console.error("Error processing payment:", error);
-    res.status(500).json({ message: "Failed to process payment" });
+    res.status(500).json({ success: false, message: "Failed to process payment" });
   }
 };
 
@@ -44,13 +40,13 @@ export const getMyPayments = async (req: AuthRequest, res: Response) => {
     const user_id = req.user?.id;
 
     if (!user_id) {
-      return res.status(401).json({ message: "User not authenticated" });
+      return res.status(401).json({ success: false, message: "User not authenticated" });
     }
 
     const payments = await getPaymentsByUser(user_id);
-    res.json({ payments });
+    res.json({ success: true, data: { payments } });
   } catch (error) {
     console.error("Error fetching payments:", error);
-    res.status(500).json({ message: "Failed to fetch payments" });
+    res.status(500).json({ success: false, message: "Failed to fetch payments" });
   }
 };

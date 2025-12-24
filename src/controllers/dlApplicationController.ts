@@ -8,21 +8,20 @@ export const applyForDl = async (req: AuthRequest, res: Response) => {
     const { rto_office_id } = req.body;
 
     if (!rto_office_id) {
-      return res.status(400).json({ message: "rto_office_id is required" });
+      return res.status(400).json({ success: false, message: "rto_office_id is required" });
     }
 
-    // Get user_id from authenticated token
     const user_id = req.user?.id;
 
     if (!user_id) {
-      return res.status(401).json({ message: "User not authenticated" });
+      return res.status(401).json({ success: false, message: "User not authenticated" });
     }
 
     const application = await createDlApplication(user_id, rto_office_id);
-    res.status(201).json({ message: "DL application submitted", application });
+    res.status(201).json({ success: true, message: "DL application submitted", data: { application } });
   } catch (error) {
     console.error("Error creating DL application:", error);
-    res.status(500).json({ message: "Failed to submit DL application" });
+    res.status(500).json({ success: false, message: "Failed to submit DL application" });
   }
 };
 
@@ -30,9 +29,9 @@ export const applyForDl = async (req: AuthRequest, res: Response) => {
 export const viewAllDlApplications = async (req: AuthRequest, res: Response) => {
   try {
     const applications = await getAllDlApplications();
-    res.json({ applications });
+    res.json({ success: true, data: { applications } });
   } catch (error) {
     console.error("Error fetching DL applications:", error);
-    res.status(500).json({ message: "Failed to fetch DL applications" });
+    res.status(500).json({ success: false, message: "Failed to fetch DL applications" });
   }
 };

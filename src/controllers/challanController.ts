@@ -10,28 +10,26 @@ export const issueChallan = async (req: AuthRequest, res: Response) => {
     const { vehicle_id, violation_type, amount } = req.body;
 
     if (!vehicle_id || !violation_type || !amount) {
-      return res.status(400).json({ message: "vehicle_id, violation_type, and amount are required" });
+      return res.status(400).json({ success: false, message: "vehicle_id, violation_type, and amount are required" });
     }
 
-    // Get issued_by from authenticated police user
     const issued_by = req.user?.id;
 
     if (!issued_by) {
-      return res.status(401).json({ message: "User not authenticated" });
+      return res.status(401).json({ success: false, message: "User not authenticated" });
     }
 
     const challan = await createChallan(vehicle_id, issued_by, violation_type, amount);
 
-    // Notify the vehicle owner (get owner_id from vehicles table)
     const vehicleResult = await pool.query("SELECT owner_id FROM vehicles WHERE id = $1", [vehicle_id]);
     if (vehicleResult.rows[0]) {
       await createNotification(vehicleResult.rows[0].owner_id, `A challan of ₹${amount} has been issued for violation: ${violation_type}`);
     }
 
-    res.status(201).json({ message: "Challan issued", challan });
+    res.status(201).json({ success: true, message: "Challan issued", data: { challan } });
   } catch (error) {
     console.error("Error issuing challan:", error);
-    res.status(500).json({ message: "Failed to issue challan" });
+    res.status(500).json({ success: false, message: "Failed to issue challan" });
   }
 };
 
@@ -41,14 +39,14 @@ export const getVehicleChallans = async (req: AuthRequest, res: Response) => {
     const { vehicleId } = req.params;
 
     if (!vehicleId) {
-      return res.status(400).json({ message: "Vehicle ID is required" });
+      return res.status(400).json({ success: false, message: "Vehicle ID is required" });
     }
 
     const challans = await getChallansByVehicle(vehicleId);
-    res.json({ challans });
+    res.json({ success: true, data: { challans } });
   } catch (error) {
     console.error("Error fetching vehicle challans:", error);
-    res.status(500).json({ message: "Failed to fetch challans" });
+    res.status(500).json({ success: false, message: "Failed to fetch challans" });
   }
 };
 
@@ -58,13 +56,13 @@ export const getMyChallans = async (req: AuthRequest, res: Response) => {
     const user_id = req.user?.id;
 
     if (!user_id) {
-      return res.status(401).json({ message: "User not authenticated" });
+      return res.status(401).json({ success: false, message: "User not authenticated" });
     }
 
     const challans = await getChallansByUser(user_id);
-    res.json({ challans });
+    res.json({ success: true, data: { challans } });
   } catch (error) {
     console.error("Error fetching user challans:", error);
-    res.status(500).json({ message: "Failed to fetch challans" });
+    res.status(500).json({ success: false, message: "Failed to fetch challans" });
   }
 };

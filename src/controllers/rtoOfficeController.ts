@@ -8,14 +8,14 @@ export const addRtoOffice = async (req: AuthRequest, res: Response) => {
     const { name, state, district, address } = req.body;
 
     if (!name || !state || !district || !address) {
-      return res.status(400).json({ message: "All fields are required: name, state, district, address" });
+      return res.status(400).json({ success: false, message: "All fields are required: name, state, district, address" });
     }
 
     const rtoOffice = await createRtoOffice(name, state, district, address);
-    res.status(201).json({ message: "RTO office created", rtoOffice });
+    res.status(201).json({ success: true, message: "RTO office created", data: { rtoOffice } });
   } catch (error) {
     console.error("Error creating RTO office:", error);
-    res.status(500).json({ message: "Failed to create RTO office" });
+    res.status(500).json({ success: false, message: "Failed to create RTO office" });
   }
 };
 
@@ -23,9 +23,9 @@ export const addRtoOffice = async (req: AuthRequest, res: Response) => {
 export const listRtoOffices = async (req: AuthRequest, res: Response) => {
   try {
     const rtoOffices = await getAllRtoOffices();
-    res.json({ rtoOffices });
+    res.json({ success: true, data: { rtoOffices } });
   } catch (error) {
     console.error("Error fetching RTO offices:", error);
-    res.status(500).json({ message: "Failed to fetch RTO offices" });
+    res.status(500).json({ success: false, message: "Failed to fetch RTO offices" });
   }
 };

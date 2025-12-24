@@ -9,36 +9,31 @@ export const approveApplication = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
 
-    // Get the application
     const application = await getDlApplicationById(id);
 
     if (!application) {
-      return res.status(404).json({ message: "Application not found" });
+      return res.status(404).json({ success: false, message: "Application not found" });
     }
 
     if (application.status !== "PENDING") {
-      return res.status(400).json({ message: "Application already processed" });
+      return res.status(400).json({ success: false, message: "Application already processed" });
     }
 
-    // Check if user already has a license
     const existingLicense = await getDrivingLicenseByUserId(application.user_id);
     if (existingLicense) {
-      return res.status(400).json({ message: "User already has a driving license" });
+      return res.status(400).json({ success: false, message: "User already has a driving license" });
     }
 
-    // Update application status to APPROVED
     await updateDlApplicationStatus(id, "APPROVED");
 
-    // Create the driving license
     const license = await createDrivingLicense(application.user_id);
 
-    // Notify the user
     await createNotification(application.user_id, "Your driving license application has been approved!");
 
-    res.json({ message: "Application approved and license issued", license });
+    res.json({ success: true, message: "Application approved and license issued", data: { license } });
   } catch (error) {
     console.error("Error approving application:", error);
-    res.status(500).json({ message: "Failed to approve application" });
+    res.status(500).json({ success: false, message: "Failed to approve application" });
   }
 };
 
@@ -47,26 +42,23 @@ export const rejectApplication = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
 
-    // Get the application
     const application = await getDlApplicationById(id);
 
     if (!application) {
-      return res.status(404).json({ message: "Application not found" });
+      return res.status(404).json({ success: false, message: "Application not found" });
     }
 
     if (application.status !== "PENDING") {
-      return res.status(400).json({ message: "Application already processed" });
+      return res.status(400).json({ success: false, message: "Application already processed" });
     }
 
-    // Update application status to REJECTED
     const updatedApplication = await updateDlApplicationStatus(id, "REJECTED");
 
-    // Notify the user
     await createNotification(application.user_id, "Your driving license application has been rejected.");
 
-    res.json({ message: "Application rejected", application: updatedApplication });
+    res.json({ success: true, message: "Application rejected", data: { application: updatedApplication } });
   } catch (error) {
     console.error("Error rejecting application:", error);
-    res.status(500).json({ message: "Failed to reject application" });
+    res.status(500).json({ success: false, message: "Failed to reject application" });
   }
 };
