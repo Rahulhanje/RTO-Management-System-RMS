@@ -47,6 +47,21 @@ const UserManagement: React.FC = () => {
     status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE' | 'SUSPENDED',
   });
 
+  // Mock data for demo mode
+  const mockUsers: User[] = [
+    { id: '1', name: 'Rahul Sharma', email: 'rahul@email.com', phone: '9876543210', address: 'Mumbai', date_of_birth: '1990-01-15', aadhaar_number: '123456789012', role: 'CITIZEN', status: 'ACTIVE', created_at: '2024-01-01', updated_at: '2024-01-01' },
+    { id: '2', name: 'Priya Patel', email: 'priya@rto.gov.in', phone: '9876543211', address: 'Mumbai', date_of_birth: '1988-05-20', aadhaar_number: '234567890123', role: 'RTO_OFFICER', status: 'ACTIVE', rto_office_id: '1', created_at: '2024-01-02', updated_at: '2024-01-02' },
+    { id: '3', name: 'Officer Kumar', email: 'kumar@police.gov.in', phone: '9876543212', address: 'Pune', date_of_birth: '1985-08-10', aadhaar_number: '345678901234', role: 'POLICE', status: 'ACTIVE', created_at: '2024-01-03', updated_at: '2024-01-03' },
+    { id: '4', name: 'Admin Singh', email: 'admin@rto.gov.in', phone: '9876543213', address: 'Delhi', date_of_birth: '1982-03-25', aadhaar_number: '456789012345', role: 'RTO_ADMIN', status: 'ACTIVE', rto_office_id: '1', created_at: '2024-01-04', updated_at: '2024-01-04' },
+    { id: '5', name: 'Super User', email: 'super@gov.in', phone: '9876543214', address: 'Delhi', date_of_birth: '1980-12-01', aadhaar_number: '567890123456', role: 'SUPER_ADMIN', status: 'ACTIVE', created_at: '2024-01-05', updated_at: '2024-01-05' },
+    { id: '6', name: 'Auditor Joshi', email: 'auditor@gov.in', phone: '9876543215', address: 'Bangalore', date_of_birth: '1987-07-18', aadhaar_number: '678901234567', role: 'AUDITOR', status: 'ACTIVE', created_at: '2024-01-06', updated_at: '2024-01-06' },
+  ];
+
+  const mockOffices: RTOOffice[] = [
+    { id: '1', name: 'RTO Mumbai Central', code: 'MH-01', address: '123 Transport Bhavan', city: 'Mumbai', state: 'Maharashtra', pincode: '400018', phone: '022-24931234', email: 'rto.mumbai@gov.in', status: 'ACTIVE', created_at: '2023-01-15', updated_at: '2024-01-01' },
+    { id: '2', name: 'RTO Pune', code: 'MH-12', address: '45 Sangam Bridge Road', city: 'Pune', state: 'Maharashtra', pincode: '411001', phone: '020-26051234', email: 'rto.pune@gov.in', status: 'ACTIVE', created_at: '2023-02-20', updated_at: '2024-01-05' },
+  ];
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -57,10 +72,20 @@ const UserManagement: React.FC = () => {
         userService.listUsers(),
         rtoService.listOffices(),
       ]);
-      if (usersRes.success) setUsers(usersRes.data || []);
-      if (officesRes.success) setRtoOffices(officesRes.data || []);
+      if (usersRes.success && usersRes.data?.length > 0) {
+        setUsers(usersRes.data);
+      } else {
+        setUsers(mockUsers);
+      }
+      if (officesRes.success && officesRes.data?.length > 0) {
+        setRtoOffices(officesRes.data);
+      } else {
+        setRtoOffices(mockOffices);
+      }
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to load data', variant: 'destructive' });
+      console.log('Using mock data - API unavailable');
+      setUsers(mockUsers);
+      setRtoOffices(mockOffices);
     } finally {
       setIsLoading(false);
     }
@@ -112,6 +137,7 @@ const UserManagement: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold">User Management</h1>
           <p className="text-muted-foreground">Manage all system users and their roles</p>
+          <Badge variant="outline" className="mt-2 bg-amber-500/10 text-amber-600 border-amber-500/30">Demo Mode - Using Mock Data</Badge>
         </div>
       </div>
 

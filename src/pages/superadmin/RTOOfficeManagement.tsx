@@ -33,6 +33,13 @@ const RTOOfficeManagement: React.FC = () => {
     status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE',
   });
 
+  // Mock data for demo mode
+  const mockOffices: RTOOffice[] = [
+    { id: '1', name: 'RTO Mumbai Central', code: 'MH-01', address: '123 Transport Bhavan, Worli', city: 'Mumbai', state: 'Maharashtra', pincode: '400018', phone: '022-24931234', email: 'rto.mumbai@gov.in', status: 'ACTIVE', created_at: '2023-01-15', updated_at: '2024-01-01' },
+    { id: '2', name: 'RTO Pune', code: 'MH-12', address: '45 Sangam Bridge Road', city: 'Pune', state: 'Maharashtra', pincode: '411001', phone: '020-26051234', email: 'rto.pune@gov.in', status: 'ACTIVE', created_at: '2023-02-20', updated_at: '2024-01-05' },
+    { id: '3', name: 'RTO Nashik', code: 'MH-15', address: '78 Civil Lines', city: 'Nashik', state: 'Maharashtra', pincode: '422001', phone: '0253-2571234', email: 'rto.nashik@gov.in', status: 'INACTIVE', created_at: '2023-03-10', updated_at: '2024-01-10' },
+  ];
+
   useEffect(() => {
     fetchOffices();
   }, []);
@@ -40,9 +47,14 @@ const RTOOfficeManagement: React.FC = () => {
   const fetchOffices = async () => {
     try {
       const response = await rtoService.listOffices();
-      if (response.success) setOffices(response.data || []);
+      if (response.success && response.data?.length > 0) {
+        setOffices(response.data);
+      } else {
+        setOffices(mockOffices);
+      }
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to load offices', variant: 'destructive' });
+      console.log('Using mock data - API unavailable');
+      setOffices(mockOffices);
     } finally {
       setIsLoading(false);
     }
@@ -110,6 +122,7 @@ const RTOOfficeManagement: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold">RTO Office Management</h1>
           <p className="text-muted-foreground">Manage all RTO offices across the state</p>
+          <Badge variant="outline" className="mt-2 bg-amber-500/10 text-amber-600 border-amber-500/30">Demo Mode - Using Mock Data</Badge>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) { setEditingOffice(null); resetForm(); } }}>
           <DialogTrigger asChild>
