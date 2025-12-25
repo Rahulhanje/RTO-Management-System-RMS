@@ -54,6 +54,7 @@ import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import SuperAdminDashboard from "./pages/superadmin/SuperAdminDashboard";
 import RTOOfficeManagement from "./pages/superadmin/RTOOfficeManagement";
 import UserManagement from "./pages/superadmin/UserManagement";
+import RoleAssignment from "./pages/superadmin/RoleAssignment";
 import SystemSettings from "./pages/superadmin/SystemSettings";
 
 // Auditor Pages
@@ -135,7 +136,7 @@ const App = () => (
               <Route path="appointments" element={<MyAppointments />} />
               <Route path="notifications" element={<MyNotifications />} />
               <Route path="analytics" element={<AdminAnalytics />} />
-              <Route path="users" element={<AdminDashboard />} />
+              <Route path="users" element={<UserManagement />} />
             </Route>
 
             {/* Super Admin Dashboard */}
@@ -143,7 +144,7 @@ const App = () => (
               <Route path="dashboard" element={<SuperAdminDashboard />} />
               <Route path="offices" element={<RTOOfficeManagement />} />
               <Route path="users" element={<UserManagement />} />
-              <Route path="roles" element={<UserManagement />} />
+              <Route path="roles" element={<RoleAssignment />} />
               <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="settings" element={<SystemSettings />} />
             </Route>
