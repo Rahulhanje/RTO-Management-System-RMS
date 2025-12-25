@@ -14,6 +14,7 @@ import Services from "./pages/public/Services";
 import Contact from "./pages/public/Contact";
 import FAQs from "./pages/public/FAQs";
 import Announcements from "./pages/public/Announcements";
+import Profile from "./pages/public/Profile";
 
 // Auth Pages
 import Login from "./pages/auth/Login";
@@ -86,6 +87,7 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/faqs" element={<FAQs />} />
             <Route path="/announcements" element={<Announcements />} />
+            <Route path="/profile" element={<Profile />} />
 
             {/* Auth Routes */}
             <Route path="/auth/login" element={<Login />} />

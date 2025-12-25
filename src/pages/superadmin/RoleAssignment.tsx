@@ -179,7 +179,7 @@ const RoleAssignment: React.FC = () => {
         <p className="text-muted-foreground">
           Review and manage user role change requests
         </p>
-        <Badge variant="outline" className="w-fit bg-amber-500/10 text-amber-400 border-amber-500/30">
+        <Badge variant="outline" className="w-fit bg-warning/10 text-warning border-warning/30">
           Demo Mode - Using Mock Data
         </Badge>
       </div>
