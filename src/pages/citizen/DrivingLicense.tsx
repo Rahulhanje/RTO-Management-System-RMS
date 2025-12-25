@@ -47,14 +47,26 @@ const DrivingLicensePage: React.FC = () => {
     try {
       const [licenseRes, applicationsRes, officesRes] = await Promise.all([
         dlService.getMyLicense().catch(() => ({ success: false, data: null })),
-        dlService.getMyApplications(),
-        rtoService.listOffices(),
+        dlService.getMyApplications().catch(() => ({ success: false, data: [] })),
+        rtoService.listOffices().catch(() => ({ success: false, data: [] })),
       ]);
-      if (licenseRes.success && licenseRes.data) setLicense(licenseRes.data);
-      if (applicationsRes.success) setApplications(applicationsRes.data || []);
-      if (officesRes.success) setRtoOffices(officesRes.data || []);
+      if (licenseRes.success && licenseRes.data) {
+        setLicense(licenseRes.data);
+      }
+      if (applicationsRes.success && Array.isArray(applicationsRes.data)) {
+        setApplications(applicationsRes.data);
+      } else {
+        setApplications([]);
+      }
+      if (officesRes.success && Array.isArray(officesRes.data)) {
+        setRtoOffices(officesRes.data);
+      } else {
+        setRtoOffices([]);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
+      setApplications([]);
+      setRtoOffices([]);
     } finally {
       setIsLoading(false);
     }

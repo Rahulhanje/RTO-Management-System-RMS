@@ -51,13 +51,23 @@ const MyAppointments: React.FC = () => {
   const fetchData = async () => {
     try {
       const [apptRes, officesRes] = await Promise.all([
-        appointmentService.getMyAppointments(),
-        rtoService.listOffices(),
+        appointmentService.getMyAppointments().catch(() => ({ success: false, data: [] })),
+        rtoService.listOffices().catch(() => ({ success: false, data: [] })),
       ]);
-      if (apptRes.success) setAppointments(apptRes.data || []);
-      if (officesRes.success) setRtoOffices(officesRes.data || []);
+      if (apptRes.success && Array.isArray(apptRes.data)) {
+        setAppointments(apptRes.data);
+      } else {
+        setAppointments([]);
+      }
+      if (officesRes.success && Array.isArray(officesRes.data)) {
+        setRtoOffices(officesRes.data);
+      } else {
+        setRtoOffices([]);
+      }
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to load appointments', variant: 'destructive' });
+      console.error('Error fetching data:', error);
+      setAppointments([]);
+      setRtoOffices([]);
     } finally {
       setIsLoading(false);
     }

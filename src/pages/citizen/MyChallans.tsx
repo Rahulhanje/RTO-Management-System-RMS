@@ -47,10 +47,15 @@ const MyChallans: React.FC = () => {
 
   const fetchChallans = async () => {
     try {
-      const response = await challanService.getMyChallans();
-      if (response.success) setChallans(response.data || []);
+      const response = await challanService.getMyChallans().catch(() => ({ success: false, data: [] }));
+      if (response.success && Array.isArray(response.data)) {
+        setChallans(response.data);
+      } else {
+        setChallans([]);
+      }
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to load challans', variant: 'destructive' });
+      console.error('Error fetching challans:', error);
+      setChallans([]);
     } finally {
       setIsLoading(false);
     }

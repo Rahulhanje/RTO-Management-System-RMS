@@ -18,10 +18,15 @@ const MyNotifications: React.FC = () => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await notificationService.getMyNotifications();
-      if (response.success) setNotifications(response.data || []);
+      const response = await notificationService.getMyNotifications().catch(() => ({ success: false, data: [] }));
+      if (response.success && Array.isArray(response.data)) {
+        setNotifications(response.data);
+      } else {
+        setNotifications([]);
+      }
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to load notifications', variant: 'destructive' });
+      console.error('Error fetching notifications:', error);
+      setNotifications([]);
     } finally {
       setIsLoading(false);
     }

@@ -29,10 +29,15 @@ const PaymentHistory: React.FC = () => {
 
   const fetchPayments = async () => {
     try {
-      const response = await paymentService.getMyPaymentHistory();
-      if (response.success) setPayments(response.data || []);
+      const response = await paymentService.getMyPaymentHistory().catch(() => ({ success: false, data: [] }));
+      if (response.success && Array.isArray(response.data)) {
+        setPayments(response.data);
+      } else {
+        setPayments([]);
+      }
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to load payments', variant: 'destructive' });
+      console.error('Error fetching payments:', error);
+      setPayments([]);
     } finally {
       setIsLoading(false);
     }

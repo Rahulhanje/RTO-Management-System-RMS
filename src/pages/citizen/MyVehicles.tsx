@@ -51,13 +51,23 @@ const MyVehicles: React.FC = () => {
   const fetchData = async () => {
     try {
       const [vehiclesRes, officesRes] = await Promise.all([
-        vehicleService.getMyVehicles(),
-        rtoService.listOffices(),
+        vehicleService.getMyVehicles().catch(() => ({ success: false, data: [] })),
+        rtoService.listOffices().catch(() => ({ success: false, data: [] })),
       ]);
-      if (vehiclesRes.success) setVehicles(vehiclesRes.data || []);
-      if (officesRes.success) setRtoOffices(officesRes.data || []);
+      if (vehiclesRes.success && Array.isArray(vehiclesRes.data)) {
+        setVehicles(vehiclesRes.data);
+      } else {
+        setVehicles([]);
+      }
+      if (officesRes.success && Array.isArray(officesRes.data)) {
+        setRtoOffices(officesRes.data);
+      } else {
+        setRtoOffices([]);
+      }
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to load vehicles', variant: 'destructive' });
+      console.error('Error fetching data:', error);
+      setVehicles([]);
+      setRtoOffices([]);
     } finally {
       setIsLoading(false);
     }
