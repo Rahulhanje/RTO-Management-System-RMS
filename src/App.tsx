@@ -18,9 +18,20 @@ import Announcements from "./pages/public/Announcements";
 // Auth Pages
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import VerifyOTP from "./pages/auth/VerifyOTP";
+import ResetPassword from "./pages/auth/ResetPassword";
 
-// Dashboard Pages
+// Citizen Pages
 import CitizenDashboard from "./pages/citizen/CitizenDashboard";
+import MyVehicles from "./pages/citizen/MyVehicles";
+import DrivingLicense from "./pages/citizen/DrivingLicense";
+import MyChallans from "./pages/citizen/MyChallans";
+import PaymentHistory from "./pages/citizen/PaymentHistory";
+import MyAppointments from "./pages/citizen/MyAppointments";
+import MyProfile from "./pages/citizen/MyProfile";
+import MyNotifications from "./pages/citizen/MyNotifications";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,18 +55,21 @@ const App = () => (
             {/* Auth Routes */}
             <Route path="/auth/login" element={<Login />} />
             <Route path="/auth/register" element={<Register />} />
+            <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+            <Route path="/auth/verify-otp" element={<VerifyOTP />} />
+            <Route path="/auth/reset-password" element={<ResetPassword />} />
 
             {/* Citizen Dashboard */}
             <Route path="/citizen" element={<ProtectedRoute allowedRoles={['CITIZEN']}><DashboardLayout /></ProtectedRoute>}>
               <Route path="dashboard" element={<CitizenDashboard />} />
-              <Route path="profile" element={<CitizenDashboard />} />
-              <Route path="vehicles" element={<CitizenDashboard />} />
-              <Route path="license" element={<CitizenDashboard />} />
-              <Route path="challans" element={<CitizenDashboard />} />
-              <Route path="payments" element={<CitizenDashboard />} />
-              <Route path="appointments" element={<CitizenDashboard />} />
+              <Route path="profile" element={<MyProfile />} />
+              <Route path="vehicles" element={<MyVehicles />} />
+              <Route path="license" element={<DrivingLicense />} />
+              <Route path="challans" element={<MyChallans />} />
+              <Route path="payments" element={<PaymentHistory />} />
+              <Route path="appointments" element={<MyAppointments />} />
               <Route path="documents" element={<CitizenDashboard />} />
-              <Route path="notifications" element={<CitizenDashboard />} />
+              <Route path="notifications" element={<MyNotifications />} />
             </Route>
 
             {/* Other Role Dashboards - placeholder routes */}
