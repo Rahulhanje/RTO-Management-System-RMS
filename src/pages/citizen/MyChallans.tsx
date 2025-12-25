@@ -9,7 +9,15 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { challanService } from '@/services';
 import { Challan } from '@/types';
-import { AlertTriangle, CreditCard, FileText, Loader2, CheckCircle2, Clock, XCircle, MapPin } from 'lucide-react';
+import { AlertTriangle, CreditCard, FileText, Loader2, CheckCircle2, Clock, XCircle, MapPin, Info } from 'lucide-react';
+
+// Mock data for demo mode
+const mockChallans: Challan[] = [
+  { id: 'CH2024001', vehicle_id: 'v1', issued_by: 'officer1', violation_type: 'OVER_SPEEDING', amount: 1000, location: 'Highway 44, KM 123', description: 'Exceeded speed limit by 30 km/h', status: 'UNPAID', created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), updated_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: 'CH2024002', vehicle_id: 'v1', issued_by: 'officer2', violation_type: 'NO_HELMET', amount: 500, location: 'MG Road, Pune', description: 'Riding without helmet', status: 'PAID', paid_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), updated_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: 'CH2024003', vehicle_id: 'v2', issued_by: 'officer1', violation_type: 'SIGNAL_JUMP', amount: 1500, location: 'FC Road Junction', description: 'Jumped red signal', status: 'DISPUTED', dispute_reason: 'Signal was yellow when I crossed', created_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(), updated_at: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: 'CH2024004', vehicle_id: 'v1', issued_by: 'officer3', violation_type: 'WRONG_PARKING', amount: 300, location: 'JM Road', description: 'Parked in no parking zone', status: 'UNPAID', created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), updated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() },
+];
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -40,6 +48,7 @@ const MyChallans: React.FC = () => {
   const [selectedChallan, setSelectedChallan] = useState<Challan | null>(null);
   const [disputeReason, setDisputeReason] = useState('');
   const [isDisputing, setIsDisputing] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   useEffect(() => {
     fetchChallans();
@@ -48,14 +57,18 @@ const MyChallans: React.FC = () => {
   const fetchChallans = async () => {
     try {
       const response = await challanService.getMyChallans().catch(() => ({ success: false, data: [] }));
-      if (response.success && Array.isArray(response.data)) {
-        setChallans(response.data);
+      const data = response.success && Array.isArray(response.data) ? response.data : [];
+      
+      if (data.length === 0) {
+        setChallans(mockChallans);
+        setIsDemoMode(true);
       } else {
-        setChallans([]);
+        setChallans(data);
       }
     } catch (error) {
       console.error('Error fetching challans:', error);
-      setChallans([]);
+      setChallans(mockChallans);
+      setIsDemoMode(true);
     } finally {
       setIsLoading(false);
     }
@@ -65,17 +78,31 @@ const MyChallans: React.FC = () => {
     if (!selectedChallan || !disputeReason) return;
     setIsDisputing(true);
     try {
-      const response = await challanService.disputeChallan(selectedChallan.id, disputeReason);
-      if (response.success) {
-        toast({ title: 'Success', description: 'Dispute submitted successfully' });
-        setSelectedChallan(null);
-        setDisputeReason('');
-        fetchChallans();
+      if (isDemoMode) {
+        setChallans(prev => prev.map(c => c.id === selectedChallan.id ? { ...c, status: 'DISPUTED' as const, dispute_reason: disputeReason } : c));
+        toast({ title: 'Demo Mode', description: 'Dispute submitted (Demo)' });
+      } else {
+        const response = await challanService.disputeChallan(selectedChallan.id, disputeReason);
+        if (response.success) {
+          toast({ title: 'Success', description: 'Dispute submitted successfully' });
+          fetchChallans();
+        }
       }
+      setSelectedChallan(null);
+      setDisputeReason('');
     } catch (error: any) {
       toast({ title: 'Error', description: error.response?.data?.message || 'Failed to submit dispute', variant: 'destructive' });
     } finally {
       setIsDisputing(false);
+    }
+  };
+
+  const handlePay = (challan: Challan) => {
+    if (isDemoMode) {
+      setChallans(prev => prev.map(c => c.id === challan.id ? { ...c, status: 'PAID' as const, paid_at: new Date().toISOString() } : c));
+      toast({ title: 'Demo Mode', description: 'Payment successful (Demo)' });
+    } else {
+      toast({ title: 'Info', description: 'Payment gateway integration required' });
     }
   };
 
@@ -87,6 +114,13 @@ const MyChallans: React.FC = () => {
 
   return (
     <div className="space-y-6 fade-in-up">
+      {isDemoMode && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+          <Info className="h-4 w-4 text-primary" />
+          <span className="text-sm text-primary">Demo Mode: Displaying sample challans</span>
+        </div>
+      )}
+      
       <div>
         <h1 className="text-2xl font-bold">My Challans</h1>
         <p className="text-muted-foreground">View and pay your traffic challans</p>
@@ -157,7 +191,7 @@ const MyChallans: React.FC = () => {
                       </div>
                       <div>
                         <p className="font-semibold">{violationLabels[challan.violation_type] || challan.violation_type}</p>
-                        <p className="text-sm text-muted-foreground">Challan ID: {challan.id.slice(0, 8)}...</p>
+                        <p className="text-sm text-muted-foreground">Challan ID: {challan.id.slice(0, 12)}</p>
                         {challan.location && <p className="text-sm text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" />{challan.location}</p>}
                         <p className="text-sm text-muted-foreground">{new Date(challan.created_at).toLocaleDateString()}</p>
                       </div>
@@ -170,7 +204,7 @@ const MyChallans: React.FC = () => {
                       <div className="flex gap-2">
                         {challan.status === 'UNPAID' && (
                           <>
-                            <Button className="btn-gradient"><CreditCard className="h-4 w-4 mr-2" />Pay Now</Button>
+                            <Button className="btn-gradient" onClick={() => handlePay(challan)}><CreditCard className="h-4 w-4 mr-2" />Pay Now</Button>
                             <Dialog>
                               <DialogTrigger asChild>
                                 <Button variant="outline" onClick={() => setSelectedChallan(challan)}>Dispute</Button>

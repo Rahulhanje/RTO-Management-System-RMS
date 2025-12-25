@@ -6,7 +6,16 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { paymentService } from '@/services';
 import { Payment } from '@/types';
-import { Wallet, CreditCard, Loader2, CheckCircle2, XCircle, Clock, ArrowDownRight, ArrowUpRight, Download } from 'lucide-react';
+import { Wallet, CreditCard, Loader2, CheckCircle2, XCircle, Clock, ArrowDownRight, ArrowUpRight, Download, Info } from 'lucide-react';
+
+// Mock data for demo mode
+const mockPayments: Payment[] = [
+  { id: 'PAY001', user_id: 'user1', amount: 1000, payment_type: 'CHALLAN', status: 'COMPLETED', payment_method: 'UPI', transaction_id: 'TXN2024123001', created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), updated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: 'PAY002', user_id: 'user1', amount: 500, payment_type: 'DL_FEE', status: 'COMPLETED', payment_method: 'Debit Card', transaction_id: 'TXN2024122901', created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), updated_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: 'PAY003', user_id: 'user1', amount: 2500, payment_type: 'VEHICLE_REG', status: 'COMPLETED', payment_method: 'Net Banking', transaction_id: 'TXN2024121501', created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), updated_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: 'PAY004', user_id: 'user1', amount: 300, payment_type: 'CHALLAN', status: 'PENDING', payment_method: 'UPI', transaction_id: null, created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() },
+  { id: 'PAY005', user_id: 'user1', amount: 1500, payment_type: 'DL_RENEWAL', status: 'REFUNDED', payment_method: 'Credit Card', transaction_id: 'TXN2024120101', refund_id: 'REF2024120501', created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), updated_at: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString() },
+];
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -18,10 +27,19 @@ const getStatusBadge = (status: string) => {
   }
 };
 
+const paymentTypeLabels: Record<string, string> = {
+  CHALLAN: 'Challan Payment',
+  DL_FEE: 'DL Application Fee',
+  DL_RENEWAL: 'DL Renewal Fee',
+  VEHICLE_REG: 'Vehicle Registration',
+  OTHER: 'Other',
+};
+
 const PaymentHistory: React.FC = () => {
   const { toast } = useToast();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   useEffect(() => {
     fetchPayments();
@@ -30,17 +48,25 @@ const PaymentHistory: React.FC = () => {
   const fetchPayments = async () => {
     try {
       const response = await paymentService.getMyPaymentHistory().catch(() => ({ success: false, data: [] }));
-      if (response.success && Array.isArray(response.data)) {
-        setPayments(response.data);
+      const data = response.success && Array.isArray(response.data) ? response.data : [];
+      
+      if (data.length === 0) {
+        setPayments(mockPayments);
+        setIsDemoMode(true);
       } else {
-        setPayments([]);
+        setPayments(data);
       }
     } catch (error) {
       console.error('Error fetching payments:', error);
-      setPayments([]);
+      setPayments(mockPayments);
+      setIsDemoMode(true);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDownloadReceipt = (payment: Payment) => {
+    toast({ title: isDemoMode ? 'Demo Mode' : 'Info', description: 'Receipt download will be implemented' });
   };
 
   const totalPaid = payments.filter(p => p.status === 'COMPLETED').reduce((sum, p) => sum + p.amount, 0);
@@ -52,6 +78,13 @@ const PaymentHistory: React.FC = () => {
 
   return (
     <div className="space-y-6 fade-in-up">
+      {isDemoMode && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+          <Info className="h-4 w-4 text-primary" />
+          <span className="text-sm text-primary">Demo Mode: Displaying sample payment history</span>
+        </div>
+      )}
+      
       <div>
         <h1 className="text-2xl font-bold">Payments</h1>
         <p className="text-muted-foreground">View your payment history and transactions</p>
@@ -117,11 +150,11 @@ const PaymentHistory: React.FC = () => {
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${payment.status === 'COMPLETED' ? 'bg-success/20 text-success' : payment.status === 'PENDING' ? 'bg-warning/20 text-warning' : 'bg-destructive/20 text-destructive'}`}>
+                      <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${payment.status === 'COMPLETED' ? 'bg-success/20 text-success' : payment.status === 'PENDING' ? 'bg-warning/20 text-warning' : payment.status === 'REFUNDED' ? 'bg-info/20 text-info' : 'bg-destructive/20 text-destructive'}`}>
                         <CreditCard className="h-6 w-6" />
                       </div>
                       <div>
-                        <p className="font-semibold">Payment #{payment.id.slice(0, 8)}</p>
+                        <p className="font-semibold">{paymentTypeLabels[payment.payment_type] || payment.payment_type}</p>
                         <p className="text-sm text-muted-foreground">{payment.payment_method || 'N/A'} • {new Date(payment.created_at).toLocaleDateString()}</p>
                         {payment.transaction_id && <p className="text-xs text-muted-foreground">TXN: {payment.transaction_id}</p>}
                       </div>
@@ -132,7 +165,7 @@ const PaymentHistory: React.FC = () => {
                         {getStatusBadge(payment.status)}
                       </div>
                       {payment.status === 'COMPLETED' && (
-                        <Button variant="ghost" size="icon"><Download className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDownloadReceipt(payment)}><Download className="h-4 w-4" /></Button>
                       )}
                     </div>
                   </div>

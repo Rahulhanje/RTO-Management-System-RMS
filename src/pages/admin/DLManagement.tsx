@@ -10,7 +10,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { dlService } from '@/services';
 import { DLApplication } from '@/types';
-import { CreditCard, Search, CheckCircle2, XCircle, Clock, Loader2, Calendar, FileCheck } from 'lucide-react';
+import { CreditCard, Search, CheckCircle2, XCircle, Clock, Loader2, Calendar, FileCheck, Info } from 'lucide-react';
+
+// Mock data for demo mode
+const mockApplications: DLApplication[] = [
+  { id: 'DL001', user_id: 'user1', rto_office_id: 'rto1', license_type: 'LMV', status: 'TEST_PASSED', documents_verified: true, test_date: '2024-12-20', test_result: 'PASSED', created_at: '2024-12-01', updated_at: '2024-12-20' },
+  { id: 'DL002', user_id: 'user2', rto_office_id: 'rto1', license_type: 'MCWG', status: 'DOCUMENTS_VERIFIED', documents_verified: true, created_at: '2024-12-10', updated_at: '2024-12-15' },
+  { id: 'DL003', user_id: 'user3', rto_office_id: 'rto2', license_type: 'HMV', status: 'PENDING', documents_verified: false, created_at: '2024-12-18', updated_at: '2024-12-18' },
+  { id: 'DL004', user_id: 'user4', rto_office_id: 'rto1', license_type: 'LMV', status: 'TEST_SCHEDULED', documents_verified: true, test_date: '2024-12-28', created_at: '2024-12-05', updated_at: '2024-12-22' },
+  { id: 'DL005', user_id: 'user5', rto_office_id: 'rto1', license_type: 'MCWOG', status: 'APPROVED', documents_verified: true, test_result: 'PASSED', dl_number: 'MH0120240005678', created_at: '2024-11-15', updated_at: '2024-12-01' },
+];
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -34,6 +43,7 @@ const DLManagement: React.FC = () => {
   const [testDate, setTestDate] = useState('');
   const [rejectReason, setRejectReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   useEffect(() => {
     fetchApplications();
@@ -41,10 +51,19 @@ const DLManagement: React.FC = () => {
 
   const fetchApplications = async () => {
     try {
-      const response = await dlService.listApplications();
-      if (response.success) setApplications(response.data || []);
+      const response = await dlService.listApplications().catch(() => ({ success: false, data: [] }));
+      const data = response.success && Array.isArray(response.data) ? response.data : [];
+      
+      if (data.length === 0) {
+        setApplications(mockApplications);
+        setIsDemoMode(true);
+      } else {
+        setApplications(data);
+      }
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to load applications', variant: 'destructive' });
+      console.error('Error fetching applications:', error);
+      setApplications(mockApplications);
+      setIsDemoMode(true);
     } finally {
       setIsLoading(false);
     }
@@ -54,9 +73,15 @@ const DLManagement: React.FC = () => {
     if (!testDate) return;
     setIsSubmitting(true);
     try {
-      await dlService.scheduleTest(id, new Date(testDate).toISOString());
-      toast({ title: 'Success', description: 'Test scheduled successfully' });
-      fetchApplications();
+      if (isDemoMode) {
+        setApplications(prev => prev.map(a => a.id === id ? { ...a, status: 'TEST_SCHEDULED' as const, test_date: testDate } : a));
+        toast({ title: 'Demo Mode', description: 'Test scheduled (Demo)' });
+      } else {
+        await dlService.scheduleTest(id, new Date(testDate).toISOString());
+        toast({ title: 'Success', description: 'Test scheduled successfully' });
+        fetchApplications();
+      }
+      setTestDate('');
     } catch (error: any) {
       toast({ title: 'Error', description: error.response?.data?.message || 'Failed to schedule', variant: 'destructive' });
     } finally {
@@ -68,11 +93,16 @@ const DLManagement: React.FC = () => {
     if (!dlNumber) return;
     setIsSubmitting(true);
     try {
-      await dlService.approveApplication(id, dlNumber, 'PASSED');
-      toast({ title: 'Success', description: 'DL approved and issued' });
+      if (isDemoMode) {
+        setApplications(prev => prev.map(a => a.id === id ? { ...a, status: 'APPROVED' as const, dl_number: dlNumber } : a));
+        toast({ title: 'Demo Mode', description: 'DL approved and issued (Demo)' });
+      } else {
+        await dlService.approveApplication(id, dlNumber, 'PASSED');
+        toast({ title: 'Success', description: 'DL approved and issued' });
+        fetchApplications();
+      }
       setSelectedApp(null);
       setDlNumber('');
-      fetchApplications();
     } catch (error: any) {
       toast({ title: 'Error', description: error.response?.data?.message || 'Approval failed', variant: 'destructive' });
     } finally {
@@ -84,11 +114,16 @@ const DLManagement: React.FC = () => {
     if (!rejectReason) return;
     setIsSubmitting(true);
     try {
-      await dlService.rejectApplication(id, rejectReason);
-      toast({ title: 'Rejected', description: 'Application has been rejected' });
+      if (isDemoMode) {
+        setApplications(prev => prev.map(a => a.id === id ? { ...a, status: 'REJECTED' as const } : a));
+        toast({ title: 'Demo Mode', description: 'Application rejected (Demo)' });
+      } else {
+        await dlService.rejectApplication(id, rejectReason);
+        toast({ title: 'Rejected', description: 'Application has been rejected' });
+        fetchApplications();
+      }
       setSelectedApp(null);
       setRejectReason('');
-      fetchApplications();
     } catch (error: any) {
       toast({ title: 'Error', description: error.response?.data?.message || 'Rejection failed', variant: 'destructive' });
     } finally {
@@ -105,6 +140,13 @@ const DLManagement: React.FC = () => {
 
   return (
     <div className="space-y-6 fade-in-up">
+      {isDemoMode && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+          <Info className="h-4 w-4 text-primary" />
+          <span className="text-sm text-primary">Demo Mode: Displaying sample DL applications</span>
+        </div>
+      )}
+      
       <div>
         <h1 className="text-2xl font-bold">DL Application Management</h1>
         <p className="text-muted-foreground">Manage driving license applications</p>

@@ -10,10 +10,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { vehicleService, rtoService } from '@/services';
 import { Vehicle, RTOOffice, VehicleType, FuelType } from '@/types';
-import { Car, Plus, Eye, RefreshCw, Trash2, Loader2, CheckCircle2, Clock, XCircle, AlertTriangle } from 'lucide-react';
+import { Car, Plus, Eye, RefreshCw, Trash2, Loader2, CheckCircle2, Clock, XCircle, AlertTriangle, Info } from 'lucide-react';
 
 const vehicleTypes: VehicleType[] = ['CAR', 'MOTORCYCLE', 'TRUCK', 'BUS', 'AUTO', 'OTHER'];
 const fuelTypes: FuelType[] = ['PETROL', 'DIESEL', 'ELECTRIC', 'HYBRID', 'CNG', 'LPG'];
+
+// Mock data for demo mode
+const mockVehicles: Vehicle[] = [
+  { id: '1', owner_id: 'user1', vehicle_type: 'CAR', make: 'Maruti Suzuki', model: 'Swift', year: 2023, color: 'White', engine_number: 'K12N1234567', chassis_number: 'MA3FJEB1S00123456', fuel_type: 'PETROL', registration_number: 'MH12AB1234', rto_office_id: 'rto1', status: 'APPROVED', verified: true, created_at: '2023-06-15', updated_at: '2023-06-20' },
+  { id: '2', owner_id: 'user1', vehicle_type: 'MOTORCYCLE', make: 'Honda', model: 'Activa 6G', year: 2024, color: 'Black', engine_number: 'JF50E1234567', chassis_number: 'ME4JF501ELT123456', fuel_type: 'PETROL', registration_number: null, rto_office_id: 'rto1', status: 'PENDING', verified: false, created_at: '2024-12-10', updated_at: '2024-12-10' },
+  { id: '3', owner_id: 'user1', vehicle_type: 'CAR', make: 'Hyundai', model: 'Creta', year: 2022, color: 'Blue', engine_number: 'G4NH1234567', chassis_number: 'MALC381CLNM123456', fuel_type: 'DIESEL', registration_number: 'MH14CD5678', rto_office_id: 'rto2', status: 'APPROVED', verified: true, created_at: '2022-03-10', updated_at: '2022-03-15' },
+];
+
+const mockRTOOffices: RTOOffice[] = [
+  { id: 'rto1', name: 'Pune RTO', code: 'MH12', address: 'Sangamwadi, Pune', city: 'Pune', state: 'Maharashtra', phone: '020-26161251', email: 'rto.pune@mh.gov.in', created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'rto2', name: 'Mumbai RTO', code: 'MH01', address: 'Tardeo, Mumbai', city: 'Mumbai', state: 'Maharashtra', phone: '022-23521001', email: 'rto.mumbai@mh.gov.in', created_at: '2020-01-01', updated_at: '2020-01-01' },
+];
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -32,6 +44,7 @@ const MyVehicles: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const [formData, setFormData] = useState({
     vehicle_type: '' as VehicleType,
     make: '',
@@ -54,20 +67,28 @@ const MyVehicles: React.FC = () => {
         vehicleService.getMyVehicles().catch(() => ({ success: false, data: [] })),
         rtoService.listOffices().catch(() => ({ success: false, data: [] })),
       ]);
-      if (vehiclesRes.success && Array.isArray(vehiclesRes.data)) {
-        setVehicles(vehiclesRes.data);
+      
+      const vehiclesData = vehiclesRes.success && Array.isArray(vehiclesRes.data) ? vehiclesRes.data : [];
+      const officesData = officesRes.success && Array.isArray(officesRes.data) ? officesRes.data : [];
+      
+      // Use mock data if API returns empty
+      if (vehiclesData.length === 0) {
+        setVehicles(mockVehicles);
+        setIsDemoMode(true);
       } else {
-        setVehicles([]);
+        setVehicles(vehiclesData);
       }
-      if (officesRes.success && Array.isArray(officesRes.data)) {
-        setRtoOffices(officesRes.data);
+      
+      if (officesData.length === 0) {
+        setRtoOffices(mockRTOOffices);
       } else {
-        setRtoOffices([]);
+        setRtoOffices(officesData);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
-      setVehicles([]);
-      setRtoOffices([]);
+      setVehicles(mockVehicles);
+      setRtoOffices(mockRTOOffices);
+      setIsDemoMode(true);
     } finally {
       setIsLoading(false);
     }
@@ -77,13 +98,29 @@ const MyVehicles: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const response = await vehicleService.register(formData);
-      if (response.success) {
-        toast({ title: 'Success', description: 'Vehicle registration submitted!' });
-        setIsDialogOpen(false);
-        fetchData();
-        setFormData({ vehicle_type: '' as VehicleType, make: '', model: '', year: new Date().getFullYear(), color: '', engine_number: '', chassis_number: '', fuel_type: '' as FuelType, rto_office_id: '' });
+      if (isDemoMode) {
+        // Simulate registration in demo mode
+        const newVehicle: Vehicle = {
+          id: Date.now().toString(),
+          owner_id: 'user1',
+          ...formData,
+          registration_number: null,
+          status: 'PENDING',
+          verified: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        setVehicles(prev => [...prev, newVehicle]);
+        toast({ title: 'Demo Mode', description: 'Vehicle registration submitted (Demo)!' });
+      } else {
+        const response = await vehicleService.register(formData);
+        if (response.success) {
+          toast({ title: 'Success', description: 'Vehicle registration submitted!' });
+          fetchData();
+        }
       }
+      setIsDialogOpen(false);
+      setFormData({ vehicle_type: '' as VehicleType, make: '', model: '', year: new Date().getFullYear(), color: '', engine_number: '', chassis_number: '', fuel_type: '' as FuelType, rto_office_id: '' });
     } catch (error: any) {
       toast({ title: 'Error', description: error.response?.data?.message || 'Registration failed', variant: 'destructive' });
     } finally {
@@ -97,6 +134,13 @@ const MyVehicles: React.FC = () => {
 
   return (
     <div className="space-y-6 fade-in-up">
+      {isDemoMode && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+          <Info className="h-4 w-4 text-primary" />
+          <span className="text-sm text-primary">Demo Mode: Displaying sample data</span>
+        </div>
+      )}
+      
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">My Vehicles</h1>

@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { appointmentService, rtoService } from '@/services';
 import { Appointment, RTOOffice, AppointmentPurpose } from '@/types';
-import { Calendar, Plus, Clock, MapPin, Loader2, CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
+import { Calendar, Plus, Clock, MapPin, Loader2, CheckCircle2, XCircle, RefreshCw, Info } from 'lucide-react';
 
 const purposeLabels: Record<AppointmentPurpose, string> = {
   DL_TEST: 'Driving License Test',
@@ -19,6 +19,18 @@ const purposeLabels: Record<AppointmentPurpose, string> = {
   DOCUMENT_VERIFICATION: 'Document Verification',
   OTHER: 'Other',
 };
+
+// Mock data for demo mode
+const mockAppointments: Appointment[] = [
+  { id: '1', user_id: 'user1', rto_office_id: 'rto1', purpose: 'DL_TEST', appointment_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), status: 'SCHEDULED', notes: 'Bring all original documents', created_at: '2024-12-15', updated_at: '2024-12-15' },
+  { id: '2', user_id: 'user1', rto_office_id: 'rto1', purpose: 'VEHICLE_INSPECTION', appointment_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), status: 'SCHEDULED', notes: '', created_at: '2024-12-10', updated_at: '2024-12-10' },
+  { id: '3', user_id: 'user1', rto_office_id: 'rto2', purpose: 'DOCUMENT_VERIFICATION', appointment_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), status: 'COMPLETED', notes: '', created_at: '2024-11-01', updated_at: '2024-11-25' },
+];
+
+const mockRTOOffices: RTOOffice[] = [
+  { id: 'rto1', name: 'Pune RTO', code: 'MH12', address: 'Sangamwadi, Pune', city: 'Pune', state: 'Maharashtra', phone: '020-26161251', email: 'rto.pune@mh.gov.in', created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'rto2', name: 'Mumbai RTO', code: 'MH01', address: 'Tardeo, Mumbai', city: 'Mumbai', state: 'Maharashtra', phone: '022-23521001', email: 'rto.mumbai@mh.gov.in', created_at: '2020-01-01', updated_at: '2020-01-01' },
+];
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -37,6 +49,7 @@ const MyAppointments: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const [formData, setFormData] = useState({
     rto_office_id: '',
     purpose: '' as AppointmentPurpose,
@@ -54,20 +67,27 @@ const MyAppointments: React.FC = () => {
         appointmentService.getMyAppointments().catch(() => ({ success: false, data: [] })),
         rtoService.listOffices().catch(() => ({ success: false, data: [] })),
       ]);
-      if (apptRes.success && Array.isArray(apptRes.data)) {
-        setAppointments(apptRes.data);
+      
+      const apptData = apptRes.success && Array.isArray(apptRes.data) ? apptRes.data : [];
+      const officesData = officesRes.success && Array.isArray(officesRes.data) ? officesRes.data : [];
+      
+      if (apptData.length === 0) {
+        setAppointments(mockAppointments);
+        setIsDemoMode(true);
       } else {
-        setAppointments([]);
+        setAppointments(apptData);
       }
-      if (officesRes.success && Array.isArray(officesRes.data)) {
-        setRtoOffices(officesRes.data);
+      
+      if (officesData.length === 0) {
+        setRtoOffices(mockRTOOffices);
       } else {
-        setRtoOffices([]);
+        setRtoOffices(officesData);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
-      setAppointments([]);
-      setRtoOffices([]);
+      setAppointments(mockAppointments);
+      setRtoOffices(mockRTOOffices);
+      setIsDemoMode(true);
     } finally {
       setIsLoading(false);
     }
@@ -77,16 +97,30 @@ const MyAppointments: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const response = await appointmentService.bookAppointment({
-        ...formData,
-        appointment_date: new Date(formData.appointment_date).toISOString(),
-      });
-      if (response.success) {
-        toast({ title: 'Success', description: 'Appointment booked successfully!' });
-        setIsDialogOpen(false);
-        fetchData();
-        setFormData({ rto_office_id: '', purpose: '' as AppointmentPurpose, appointment_date: '', notes: '' });
+      if (isDemoMode) {
+        const newAppt: Appointment = {
+          id: Date.now().toString(),
+          user_id: 'user1',
+          ...formData,
+          appointment_date: new Date(formData.appointment_date).toISOString(),
+          status: 'SCHEDULED',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        setAppointments(prev => [...prev, newAppt]);
+        toast({ title: 'Demo Mode', description: 'Appointment booked (Demo)!' });
+      } else {
+        const response = await appointmentService.bookAppointment({
+          ...formData,
+          appointment_date: new Date(formData.appointment_date).toISOString(),
+        });
+        if (response.success) {
+          toast({ title: 'Success', description: 'Appointment booked successfully!' });
+          fetchData();
+        }
       }
+      setIsDialogOpen(false);
+      setFormData({ rto_office_id: '', purpose: '' as AppointmentPurpose, appointment_date: '', notes: '' });
     } catch (error: any) {
       toast({ title: 'Error', description: error.response?.data?.message || 'Booking failed', variant: 'destructive' });
     } finally {
@@ -95,6 +129,11 @@ const MyAppointments: React.FC = () => {
   };
 
   const handleCancel = async (id: string) => {
+    if (isDemoMode) {
+      setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: 'CANCELLED' as const } : a));
+      toast({ title: 'Demo Mode', description: 'Appointment cancelled (Demo)' });
+      return;
+    }
     try {
       const response = await appointmentService.cancelAppointment(id);
       if (response.success) {
@@ -115,6 +154,13 @@ const MyAppointments: React.FC = () => {
 
   return (
     <div className="space-y-6 fade-in-up">
+      {isDemoMode && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+          <Info className="h-4 w-4 text-primary" />
+          <span className="text-sm text-primary">Demo Mode: Displaying sample data</span>
+        </div>
+      )}
+      
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">My Appointments</h1>

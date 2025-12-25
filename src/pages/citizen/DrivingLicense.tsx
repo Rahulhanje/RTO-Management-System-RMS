@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { dlService, rtoService } from '@/services';
 import { DrivingLicense, DLApplication, RTOOffice, LicenseType } from '@/types';
-import { CreditCard, Plus, QrCode, RefreshCw, Loader2, CheckCircle2, Clock, XCircle, FileText, Calendar } from 'lucide-react';
+import { CreditCard, Plus, QrCode, RefreshCw, Loader2, CheckCircle2, Clock, XCircle, FileText, Calendar, Info } from 'lucide-react';
 
 const licenseTypes: LicenseType[] = ['LMV', 'HMV', 'MCWG', 'MCWOG', 'TRANS'];
 const licenseTypeLabels: Record<LicenseType, string> = {
@@ -19,6 +19,29 @@ const licenseTypeLabels: Record<LicenseType, string> = {
   MCWOG: 'Motorcycle without Gear',
   TRANS: 'Transport Vehicle',
 };
+
+// Mock data for demo mode
+const mockLicense: DrivingLicense = {
+  id: 'dl1',
+  user_id: 'user1',
+  dl_number: 'MH0120250001234',
+  license_type: 'LMV',
+  issue_date: '2023-01-15',
+  expiry_date: '2043-01-14',
+  rto_office_id: 'rto1',
+  status: 'ACTIVE',
+  created_at: '2023-01-15',
+  updated_at: '2023-01-15',
+};
+
+const mockApplications: DLApplication[] = [
+  { id: 'app1', user_id: 'user1', rto_office_id: 'rto1', license_type: 'MCWG', status: 'DOCUMENTS_VERIFIED', documents_verified: true, test_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(), created_at: '2024-12-01', updated_at: '2024-12-15' },
+];
+
+const mockRTOOffices: RTOOffice[] = [
+  { id: 'rto1', name: 'Pune RTO', code: 'MH12', address: 'Sangamwadi, Pune', city: 'Pune', state: 'Maharashtra', phone: '020-26161251', email: 'rto.pune@mh.gov.in', created_at: '2020-01-01', updated_at: '2020-01-01' },
+  { id: 'rto2', name: 'Mumbai RTO', code: 'MH01', address: 'Tardeo, Mumbai', city: 'Mumbai', state: 'Maharashtra', phone: '022-23521001', email: 'rto.mumbai@mh.gov.in', created_at: '2020-01-01', updated_at: '2020-01-01' },
+];
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -37,6 +60,7 @@ const DrivingLicensePage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const [formData, setFormData] = useState({ rto_office_id: '', license_type: '' as LicenseType });
 
   useEffect(() => {
@@ -50,23 +74,32 @@ const DrivingLicensePage: React.FC = () => {
         dlService.getMyApplications().catch(() => ({ success: false, data: [] })),
         rtoService.listOffices().catch(() => ({ success: false, data: [] })),
       ]);
-      if (licenseRes.success && licenseRes.data) {
-        setLicense(licenseRes.data);
-      }
-      if (applicationsRes.success && Array.isArray(applicationsRes.data)) {
-        setApplications(applicationsRes.data);
+      
+      const hasLicense = licenseRes.success && licenseRes.data;
+      const appData = applicationsRes.success && Array.isArray(applicationsRes.data) ? applicationsRes.data : [];
+      const officesData = officesRes.success && Array.isArray(officesRes.data) ? officesRes.data : [];
+      
+      // Check if we should use mock data
+      if (!hasLicense && appData.length === 0) {
+        setLicense(mockLicense);
+        setApplications(mockApplications);
+        setIsDemoMode(true);
       } else {
-        setApplications([]);
+        if (hasLicense) setLicense(licenseRes.data);
+        setApplications(appData);
       }
-      if (officesRes.success && Array.isArray(officesRes.data)) {
-        setRtoOffices(officesRes.data);
+      
+      if (officesData.length === 0) {
+        setRtoOffices(mockRTOOffices);
       } else {
-        setRtoOffices([]);
+        setRtoOffices(officesData);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
-      setApplications([]);
-      setRtoOffices([]);
+      setLicense(mockLicense);
+      setApplications(mockApplications);
+      setRtoOffices(mockRTOOffices);
+      setIsDemoMode(true);
     } finally {
       setIsLoading(false);
     }
@@ -76,12 +109,28 @@ const DrivingLicensePage: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const response = await dlService.apply(formData.rto_office_id, formData.license_type);
-      if (response.success) {
-        toast({ title: 'Success', description: 'DL application submitted!' });
-        setIsDialogOpen(false);
-        fetchData();
+      if (isDemoMode) {
+        const newApp: DLApplication = {
+          id: Date.now().toString(),
+          user_id: 'user1',
+          rto_office_id: formData.rto_office_id,
+          license_type: formData.license_type,
+          status: 'PENDING',
+          documents_verified: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        setApplications(prev => [...prev, newApp]);
+        toast({ title: 'Demo Mode', description: 'DL application submitted (Demo)!' });
+      } else {
+        const response = await dlService.apply(formData.rto_office_id, formData.license_type);
+        if (response.success) {
+          toast({ title: 'Success', description: 'DL application submitted!' });
+          fetchData();
+        }
       }
+      setIsDialogOpen(false);
+      setFormData({ rto_office_id: '', license_type: '' as LicenseType });
     } catch (error: any) {
       toast({ title: 'Error', description: error.response?.data?.message || 'Application failed', variant: 'destructive' });
     } finally {
@@ -95,6 +144,13 @@ const DrivingLicensePage: React.FC = () => {
 
   return (
     <div className="space-y-6 fade-in-up">
+      {isDemoMode && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/20">
+          <Info className="h-4 w-4 text-primary" />
+          <span className="text-sm text-primary">Demo Mode: Displaying sample license data</span>
+        </div>
+      )}
+      
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Driving License</h1>
@@ -155,7 +211,7 @@ const DrivingLicensePage: React.FC = () => {
                     <div><span className="text-muted-foreground">License Type</span><p className="font-medium">{license.license_type}</p></div>
                     <div><span className="text-muted-foreground">Issue Date</span><p className="font-medium">{new Date(license.issue_date).toLocaleDateString()}</p></div>
                     <div><span className="text-muted-foreground">Expiry Date</span><p className="font-medium">{new Date(license.expiry_date).toLocaleDateString()}</p></div>
-                    <div><span className="text-muted-foreground">RTO</span><p className="font-medium">{license.rto_office_id.slice(0, 8)}...</p></div>
+                    <div><span className="text-muted-foreground">RTO</span><p className="font-medium">{rtoOffices.find(o => o.id === license.rto_office_id)?.name || license.rto_office_id.slice(0, 8)}</p></div>
                   </div>
                   <div className="flex gap-3 pt-2">
                     <Button variant="outline"><QrCode className="h-4 w-4 mr-2" />View Digital DL</Button>
