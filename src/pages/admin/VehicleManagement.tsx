@@ -9,11 +9,12 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { vehicleService } from '@/services';
 import { Vehicle } from '@/types';
-import { Car, Search, CheckCircle2, XCircle, Clock, Loader2, Trash2 } from 'lucide-react';
+import { Car, Search, CheckCircle2, XCircle, Clock, Loader2, Trash2, FileCheck } from 'lucide-react';
 
 const getStatusBadge = (status: string) => {
   switch (status) {
     case 'APPROVED': return <Badge className="badge-success"><CheckCircle2 className="h-3 w-3 mr-1" />Approved</Badge>;
+    case 'VERIFIED': return <Badge className="badge-info"><FileCheck className="h-3 w-3 mr-1" />Verified</Badge>;
     case 'PENDING': return <Badge className="badge-warning"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
     case 'REJECTED': return <Badge className="badge-error"><XCircle className="h-3 w-3 mr-1" />Rejected</Badge>;
     case 'SCRAPPED': return <Badge variant="outline"><Trash2 className="h-3 w-3 mr-1" />Scrapped</Badge>;
@@ -101,7 +102,8 @@ const VehicleManagement: React.FC = () => {
     v.registration_number?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const pendingVehicles = filteredVehicles.filter(v => v.status === 'PENDING' && v.verified);
+  // Show vehicles that have been verified by officer and are ready for admin approval
+  const pendingVehicles = filteredVehicles.filter(v => v.status === 'VERIFIED');
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -121,9 +123,10 @@ const VehicleManagement: React.FC = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-5 gap-4">
         <Card className="glass-card"><CardContent className="py-4 text-center"><p className="text-2xl font-bold">{vehicles.length}</p><p className="text-xs text-muted-foreground">Total</p></CardContent></Card>
         <Card className="glass-card"><CardContent className="py-4 text-center"><p className="text-2xl font-bold text-warning">{vehicles.filter(v => v.status === 'PENDING').length}</p><p className="text-xs text-muted-foreground">Pending</p></CardContent></Card>
+        <Card className="glass-card"><CardContent className="py-4 text-center"><p className="text-2xl font-bold text-blue-500">{vehicles.filter(v => v.status === 'VERIFIED').length}</p><p className="text-xs text-muted-foreground">Verified</p></CardContent></Card>
         <Card className="glass-card"><CardContent className="py-4 text-center"><p className="text-2xl font-bold text-success">{vehicles.filter(v => v.status === 'APPROVED').length}</p><p className="text-xs text-muted-foreground">Approved</p></CardContent></Card>
         <Card className="glass-card"><CardContent className="py-4 text-center"><p className="text-2xl font-bold text-muted-foreground">{vehicles.filter(v => v.status === 'SCRAPPED').length}</p><p className="text-xs text-muted-foreground">Scrapped</p></CardContent></Card>
       </div>
