@@ -3,14 +3,17 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { analyticsService, rtoService, userService } from '@/services';
-import { Building2, Users, Shield, Activity, TrendingUp, AlertTriangle, Server, CheckCircle2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Building2, Users, Shield, Activity, TrendingUp, AlertTriangle, Server, CheckCircle2, Loader2 } from 'lucide-react';
 
-const stats = [
-  { title: 'Total RTO Offices', value: '25', icon: Building2, color: 'from-primary to-secondary', change: '+2 this month' },
-  { title: 'Total Users', value: '15,240', icon: Users, color: 'from-success to-accent', change: '+340 new users' },
-  { title: 'Active Roles', value: '6', icon: Shield, color: 'from-warning to-destructive', change: 'All configured' },
-  { title: 'System Health', value: '99.9%', icon: Activity, color: 'from-secondary to-primary', change: 'Operational' },
-];
+interface DashboardStats {
+  total_users: number;
+  total_vehicles: number;
+  total_licenses: number;
+  total_challans: number;
+  pending_applications: number;
+  total_revenue: number;
+}
 
 const systemStatus = [
   { service: 'Database', status: 'operational', uptime: '99.99%' },
@@ -28,6 +31,110 @@ const recentAdminActions = [
 
 const SuperAdminDashboard: React.FC = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
+  const [rtoOffices, setRtoOffices] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [roleCounts, setRoleCounts] = useState({
+    citizens: 0,
+    police: 0,
+    officers: 0,
+    admins: 0,
+    auditors: 0,
+    super_admins: 0,
+  });
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setIsLoading(true);
+      const [dashResponse, rtoResponse, usersResponse] = await Promise.all([
+        analyticsService.getDashboardAnalytics(),
+        rtoService.listOffices().catch(() => ({ success: false, data: [] })),
+        userService.listUsers().catch(() => ({ success: false, data: [] })),
+      ]);
+      
+      if (dashResponse.success && dashResponse.data) {
+        setDashboardStats(dashResponse.data.stats);
+      }
+      
+      if (rtoResponse.success && rtoResponse.data) {
+        const officesData = (rtoResponse.data as any).rtoOffices || rtoResponse.data || [];
+        if (Array.isArray(officesData)) {
+          setRtoOffices(officesData);
+        }
+      }
+      
+      if (usersResponse.success && usersResponse.data) {
+        const usersData = (usersResponse.data as any).users || usersResponse.data || [];
+        if (Array.isArray(usersData)) {
+          setUsers(usersData);
+          // Count users by role
+          const counts = {
+            citizens: usersData.filter((u: any) => u.role === 'CITIZEN').length,
+            police: usersData.filter((u: any) => u.role === 'POLICE').length,
+            officers: usersData.filter((u: any) => u.role === 'RTO_OFFICER').length,
+            admins: usersData.filter((u: any) => u.role === 'RTO_ADMIN').length,
+            auditors: usersData.filter((u: any) => u.role === 'AUDITOR').length,
+            super_admins: usersData.filter((u: any) => u.role === 'SUPER_ADMIN').length,
+          };
+          setRoleCounts(counts);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch dashboard data',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const stats = [
+    { 
+      title: 'Total RTO Offices', 
+      value: rtoOffices.length.toString(), 
+      icon: Building2, 
+      color: 'from-primary to-secondary', 
+      change: '+2 this month' 
+    },
+    { 
+      title: 'Total Users', 
+      value: dashboardStats?.total_users?.toLocaleString() || '0', 
+      icon: Users, 
+      color: 'from-success to-accent', 
+      change: '+340 new users' 
+    },
+    { 
+      title: 'Active Roles', 
+      value: '6', 
+      icon: Shield, 
+      color: 'from-warning to-destructive', 
+      change: 'All configured' 
+    },
+    { 
+      title: 'System Health', 
+      value: '99.9%', 
+      icon: Activity, 
+      color: 'from-secondary to-primary', 
+      change: 'Operational' 
+    },
+  ];
 
   return (
     <div className="space-y-6 fade-in-up">
@@ -56,6 +163,90 @@ const SuperAdminDashboard: React.FC = () => {
             </Card>
           </motion.div>
         ))}
+      </div>
+
+      {/* User Role Statistics */}
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Users by Role</h2>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Card className="glass-card">
+            <CardContent className="py-4 text-center">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mx-auto mb-3">
+                <Users className="h-6 w-6 text-white" />
+              </div>
+              <p className="text-2xl font-bold gradient-text">{roleCounts.citizens.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground">Citizens</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {dashboardStats?.total_users ? ((roleCounts.citizens / dashboardStats.total_users) * 100).toFixed(1) : 0}% of total
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card">
+            <CardContent className="py-4 text-center">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center mx-auto mb-3">
+                <Shield className="h-6 w-6 text-white" />
+              </div>
+              <p className="text-2xl font-bold gradient-text">{roleCounts.police.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground">Police Officers</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {dashboardStats?.total_users ? ((roleCounts.police / dashboardStats.total_users) * 100).toFixed(1) : 0}% of total
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card">
+            <CardContent className="py-4 text-center">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mx-auto mb-3">
+                <Activity className="h-6 w-6 text-white" />
+              </div>
+              <p className="text-2xl font-bold gradient-text">{roleCounts.officers.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground">RTO Officers</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {dashboardStats?.total_users ? ((roleCounts.officers / dashboardStats.total_users) * 100).toFixed(1) : 0}% of total
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card">
+            <CardContent className="py-4 text-center">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mx-auto mb-3">
+                <Building2 className="h-6 w-6 text-white" />
+              </div>
+              <p className="text-2xl font-bold gradient-text">{roleCounts.admins.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground">RTO Admins</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {dashboardStats?.total_users ? ((roleCounts.admins / dashboardStats.total_users) * 100).toFixed(1) : 0}% of total
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card">
+            <CardContent className="py-4 text-center">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center mx-auto mb-3">
+                <AlertTriangle className="h-6 w-6 text-white" />
+              </div>
+              <p className="text-2xl font-bold gradient-text">{roleCounts.auditors.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground">Auditors</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {dashboardStats?.total_users ? ((roleCounts.auditors / dashboardStats.total_users) * 100).toFixed(1) : 0}% of total
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card">
+            <CardContent className="py-4 text-center">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center mx-auto mb-3">
+                <Shield className="h-6 w-6 text-white" />
+              </div>
+              <p className="text-2xl font-bold gradient-text">{roleCounts.super_admins.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground">Super Admins</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {dashboardStats?.total_users ? ((roleCounts.super_admins / dashboardStats.total_users) * 100).toFixed(1) : 0}% of total
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* System Status & Recent Actions */}

@@ -44,6 +44,7 @@ import PoliceAnalytics from "./pages/police/PoliceAnalytics";
 import OfficerDashboard from "./pages/officer/OfficerDashboard";
 import DocumentVerification from "./pages/officer/DocumentVerification";
 import TestResults from "./pages/officer/TestResults";
+import Appointments from "./pages/officer/Appointments";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -124,7 +125,7 @@ const App = () => (
               <Route path="applications" element={<DocumentVerification />} />
               <Route path="verification" element={<DocumentVerification />} />
               <Route path="test-results" element={<TestResults />} />
-              <Route path="appointments" element={<MyAppointments />} />
+              <Route path="appointments" element={<Appointments />} />
               <Route path="profile" element={<MyProfile />} />
             </Route>
 
@@ -135,7 +136,7 @@ const App = () => (
               <Route path="dl-applications" element={<DLManagement />} />
               <Route path="challans" element={<ChallanList />} />
               <Route path="payments" element={<PaymentHistory />} />
-              <Route path="appointments" element={<MyAppointments />} />
+              <Route path="appointments" element={<Appointments />} />
               <Route path="notifications" element={<MyNotifications />} />
               <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="users" element={<UserManagement />} />
@@ -147,7 +148,7 @@ const App = () => (
               <Route path="dashboard" element={<SuperAdminDashboard />} />
               <Route path="offices" element={<RTOOfficeManagement />} />
               <Route path="users" element={<UserManagement />} />
-              <Route path="roles" element={<RoleAssignment />} />
+              {/* <Route path="roles" element={<RoleAssignment />} /> */}
               <Route path="analytics" element={<AdminAnalytics />} />
               <Route path="settings" element={<SystemSettings />} />
               <Route path="profile" element={<MyProfile />} />

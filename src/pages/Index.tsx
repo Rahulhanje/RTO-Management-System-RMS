@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { PublicLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Car,
   CreditCard,
@@ -99,6 +100,21 @@ const itemVariants = {
 };
 
 const Index: React.FC = () => {
+  const { isAuthenticated, user } = useAuth();
+
+  const getDashboardLink = () => {
+    if (!user) return '/auth/register';
+    switch (user.role) {
+      case 'CITIZEN': return '/citizen/dashboard';
+      case 'POLICE': return '/police/dashboard';
+      case 'RTO_OFFICER': return '/officer/dashboard';
+      case 'RTO_ADMIN': return '/admin/dashboard';
+      case 'SUPER_ADMIN': return '/super-admin/dashboard';
+      case 'AUDITOR': return '/auditor/dashboard';
+      default: return '/citizen/dashboard';
+    }
+  };
+
   return (
     <PublicLayout>
       {/* Hero Section */}
@@ -151,8 +167,8 @@ const Index: React.FC = () => {
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
               <Button size="lg" className="btn-gradient text-lg px-8" asChild>
-                <Link to="/auth/register">
-                  Get Started Free
+                <Link to={isAuthenticated ? getDashboardLink() : '/auth/register'}>
+                  {isAuthenticated ? 'Go to Dashboard' : 'Get Started Free'}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
@@ -387,13 +403,15 @@ const Index: React.FC = () => {
               Ready to Go Digital?
             </h2>
             <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-              Join millions of Indians who have already simplified their RTO experience. 
-              Create your free account today.
+              {isAuthenticated 
+                ? 'Access your dashboard and manage all your RTO services in one place.'
+                : 'Join millions of Indians who have already simplified their RTO experience. Create your free account today.'
+              }
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="btn-gradient text-lg px-8" asChild>
-                <Link to="/auth/register">
-                  Create Free Account
+                <Link to={isAuthenticated ? getDashboardLink() : '/auth/register'}>
+                  {isAuthenticated ? 'Go to Dashboard' : 'Create Free Account'}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>

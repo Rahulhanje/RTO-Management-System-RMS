@@ -35,7 +35,7 @@ export type PaymentMethod = 'CARD' | 'UPI' | 'NETBANKING' | 'WALLET';
 export type AppointmentPurpose = 'DL_TEST' | 'VEHICLE_INSPECTION' | 'DOCUMENT_VERIFICATION' | 'OTHER';
 
 // Appointment Status
-export type AppointmentStatus = 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'RESCHEDULED';
+export type AppointmentStatus = 'SCHEDULED' | 'BOOKED' | 'COMPLETED' | 'CANCELLED' | 'RESCHEDULED';
 
 // Dispute Resolution
 export type DisputeResolution = 'ACCEPTED' | 'REJECTED' | 'PENDING';

@@ -99,7 +99,7 @@ const getSidebarItems = (role: string): SidebarItem[] => {
         ...baseItems,
         { icon: Building2, label: 'RTO Offices', href: 'offices' },
         { icon: Users, label: 'User Management', href: 'users' },
-        { icon: Shield, label: 'Role Assignment', href: 'roles' },
+        // { icon: Shield, label: 'Role Assignment', href: 'roles' },
         { icon: BarChart3, label: 'Analytics', href: 'analytics' },
         { icon: Settings, label: 'Settings', href: 'settings' },
         { icon: User, label: 'Profile', href: 'profile' },

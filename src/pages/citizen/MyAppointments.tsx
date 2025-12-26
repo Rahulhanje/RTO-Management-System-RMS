@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,7 @@ const purposeLabels: Record<AppointmentPurpose, string> = {
 
 const getStatusBadge = (status: string) => {
   switch (status) {
+    case 'BOOKED':
     case 'SCHEDULED': return <Badge className="badge-info"><Clock className="h-3 w-3 mr-1" />Scheduled</Badge>;
     case 'COMPLETED': return <Badge className="badge-success"><CheckCircle2 className="h-3 w-3 mr-1" />Completed</Badge>;
     case 'CANCELLED': return <Badge className="badge-error"><XCircle className="h-3 w-3 mr-1" />Cancelled</Badge>;
@@ -38,7 +39,10 @@ const MyAppointments: React.FC = () => {
   const [rtoOffices, setRtoOffices] = useState<RTOOffice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isRescheduleDialogOpen, setIsRescheduleDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState('');
   const [formData, setFormData] = useState({
     rto_office_id: '',
     purpose: '' as AppointmentPurpose,
@@ -112,8 +116,42 @@ const MyAppointments: React.FC = () => {
     }
   };
 
-  const upcomingAppointments = appointments.filter(a => a.status === 'SCHEDULED' && new Date(a.appointment_date) > new Date());
-  const pastAppointments = appointments.filter(a => a.status !== 'SCHEDULED' || new Date(a.appointment_date) <= new Date());
+  const handleReschedule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAppointment) return;
+    
+    setIsSubmitting(true);
+    try {
+      const response = await appointmentService.rescheduleAppointment(
+        selectedAppointment.id, 
+        new Date(rescheduleDate).toISOString()
+      );
+      if (response.success) {
+        toast({ title: 'Success', description: 'Appointment rescheduled successfully!' });
+        fetchData();
+        setIsRescheduleDialogOpen(false);
+        setSelectedAppointment(null);
+        setRescheduleDate('');
+      }
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.response?.data?.message || 'Failed to reschedule', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const openRescheduleDialog = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setRescheduleDate('');
+    setIsRescheduleDialogOpen(true);
+  };
+
+  const upcomingAppointments = appointments.filter(a => 
+    (a.status === 'SCHEDULED' || a.status === 'BOOKED') && new Date(a.appointment_date) > new Date()
+  );
+  const pastAppointments = appointments.filter(a => 
+    (a.status !== 'SCHEDULED' && a.status !== 'BOOKED') || new Date(a.appointment_date) <= new Date()
+  );
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -133,6 +171,7 @@ const MyAppointments: React.FC = () => {
           <DialogContent className="glass-card">
             <DialogHeader>
               <DialogTitle>Book New Appointment</DialogTitle>
+              <DialogDescription>Select your preferred date, time, and purpose for your RTO visit.</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleBook} className="space-y-4">
               <div className="space-y-2">
@@ -169,6 +208,50 @@ const MyAppointments: React.FC = () => {
         </Dialog>
       </div>
 
+      {/* Reschedule Dialog */}
+      <Dialog open={isRescheduleDialogOpen} onOpenChange={setIsRescheduleDialogOpen}>
+        <DialogContent className="glass-card">
+          <DialogHeader>
+            <DialogTitle>Reschedule Appointment</DialogTitle>
+            <DialogDescription>Choose a new date and time for your appointment.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleReschedule} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Current Appointment</Label>
+              <div className="p-3 rounded-lg bg-muted/50">
+                <p className="font-medium">{selectedAppointment && purposeLabels[selectedAppointment.purpose]}</p>
+                <p className="text-sm text-muted-foreground">
+                  {selectedAppointment && new Date(selectedAppointment.appointment_date).toLocaleString()}
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>New Date & Time</Label>
+              <Input 
+                type="datetime-local" 
+                value={rescheduleDate} 
+                onChange={(e) => setRescheduleDate(e.target.value)} 
+                className="bg-muted/50" 
+                required 
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="flex-1" 
+                onClick={() => setIsRescheduleDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" className="btn-gradient flex-1" disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Reschedule'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* Upcoming Appointments */}
       {upcomingAppointments.length > 0 && (
         <div>
@@ -190,7 +273,9 @@ const MyAppointments: React.FC = () => {
                       <p className="flex items-center gap-2"><MapPin className="h-4 w-4" />RTO Office</p>
                     </div>
                     <div className="flex gap-2 mt-4">
-                      <Button variant="outline" size="sm" className="flex-1"><RefreshCw className="h-4 w-4 mr-1" />Reschedule</Button>
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => openRescheduleDialog(appt)}>
+                        <RefreshCw className="h-4 w-4 mr-1" />Reschedule
+                      </Button>
                       <Button variant="outline" size="sm" className="flex-1 text-destructive hover:text-destructive" onClick={() => handleCancel(appt.id)}>Cancel</Button>
                     </div>
                   </CardContent>
@@ -219,8 +304,26 @@ const MyAppointments: React.FC = () => {
                         <p className="text-sm text-muted-foreground">{new Date(appt.appointment_date).toLocaleString()}</p>
                       </div>
                     </div>
-                    {getStatusBadge(appt.status)}
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(appt.status)}
+                      {(appt.status === 'BOOKED' || appt.status === 'SCHEDULED') && (
+                        <div className="flex gap-2 ml-2">
+                          <Button variant="outline" size="sm" onClick={() => openRescheduleDialog(appt)}>
+                            <RefreshCw className="h-4 w-4 mr-1" />Reschedule
+                          </Button>
+                          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleCancel(appt.id)}>
+                            Cancel
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
+                  {appt.notes && (
+                    <div className="mt-3 p-3 rounded-lg bg-muted/30 border border-muted">
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Completion Notes:</p>
+                      <p className="text-sm">{appt.notes}</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}

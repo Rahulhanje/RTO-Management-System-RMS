@@ -26,6 +26,20 @@ export const analyticsService = {
     return response.data;
   },
 
+  // Get recent activities
+  getRecentActivities: async (limit?: number): Promise<ApiResponse<any>> => {
+    const response = await api.get('/analytics/recent-activity', {
+      params: { limit },
+    });
+    return response.data;
+  },
+
+  // Get weekly statistics
+  getWeeklyStats: async (): Promise<ApiResponse<any>> => {
+    const response = await api.get('/analytics/weekly-stats');
+    return response.data;
+  },
+
   // Health check
   healthCheck: async (): Promise<ApiResponse<{ status: string }>> => {
     const response = await api.get('/health');
