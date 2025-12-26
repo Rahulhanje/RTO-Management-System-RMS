@@ -1,188 +1,366 @@
+<div align="center">
+
 # 🚦 RTO Management System
 
-A full-stack **RTO (Regional Transport Office) Management System** designed to digitize and streamline citizen services such as license management, vehicle registration, challans, approvals, and role-based operations for police and RTO officials.
+<img src="https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge" alt="Status">
+<img src="https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js">
+<img src="https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React">
+<img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
+<img src="https://img.shields.io/badge/PostgreSQL-15-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL">
 
-This project focuses on **clarity, scalability, and role-based access**, keeping the backend simple and understandable while still following good system design practices.
+<br/>
+<br/>
+
+**🌐 A Modern Full-Stack Solution for Regional Transport Office Operations**
+
+*Digitizing citizen services • Streamlining workflows • Empowering authorities*
+
+<br/>
+
+[Features](#-features) • [Tech Stack](#️-tech-stack) • [Installation](#-quick-start) • [API Docs](#-api-endpoints) • [Contributing](#-contributing)
 
 ---
 
-## 📌 Project Goals
+</div>
 
-- Digitize core RTO workflows
-- Reduce manual paperwork and delays
-- Provide role-based access for different authorities
-- Ensure secure authentication and authorization
-- Build a scalable foundation for future features
+## ✨ What is RTO Management System?
+
+A comprehensive **digital platform** that transforms how Regional Transport Offices operate. From license applications to vehicle registrations, challans to appointments — everything managed through an intuitive, role-based system.
+
+<div align="center">
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    🎯 KEY HIGHLIGHTS                            │
+├─────────────────────────────────────────────────────────────────┤
+│  🔐 Secure JWT Authentication    │  📊 Real-time Analytics     │
+│  👥 Multi-Role Access Control    │  💳 Integrated Payments     │
+│  📱 Responsive Modern UI         │  🔔 Smart Notifications     │
+│  ⚡ Lightning Fast Performance   │  🛡️ Enterprise Security     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+</div>
 
 ---
 
-## 🧩 Core Modules
+## 👥 User Roles & Capabilities
+
+<table>
+<tr>
+<td width="25%" align="center">
 
 ### 👤 Citizen
-- Register & login
-- Apply for driving license
-- View license & application status
-- Register vehicles
-- View challans & raise disputes
-- Profile management
+**Self-Service Portal**
+
+</td>
+<td width="25%" align="center">
 
 ### 👮 Police
-- Issue challans
-- Verify license & vehicle details
-- Update challan status
-- Access only authorized routes
+**Enforcement Tools**
+
+</td>
+<td width="25%" align="center">
 
 ### 🏢 RTO Officer
-- Approve / reject license applications
-- Approve vehicle registrations
-- Issue driving licenses
-- Monitor system activity
+**Processing Hub**
 
-### 🛠 Admin
-- Manage roles & permissions
-- System monitoring
-- Configuration management
+</td>
+<td width="25%" align="center">
+
+### 🛡️ Admin
+**System Control**
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+- Apply for DL
+- Register vehicles
+- View challans
+- Book appointments
+- Track applications
+- Make payments
+
+</td>
+<td valign="top">
+
+- Issue challans
+- Verify licenses
+- Check vehicle info
+- Update violations
+- Access reports
+
+</td>
+<td valign="top">
+
+- Approve/reject DL
+- Process registrations
+- Issue licenses
+- Schedule tests
+- Monitor queues
+
+</td>
+<td valign="top">
+
+- Manage users
+- Assign roles
+- View analytics
+- System config
+- Audit logs
+
+</td>
+</tr>
+</table>
 
 ---
 
-## 🏗️ Tech Stack
+## 🛠️ Tech Stack
+
+<div align="center">
 
 ### Backend
-- Node.js
-- Express.js
-- TypeScript
-- PostgreSQL
-- JWT Authentication
-- Role-Based Access Control (RBAC)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
 
 ### Frontend
-- React + Vite
-- TypeScript
-- Tailwind CSS
-- Shadcn/UI Components
-- Role-based dashboards
+![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Tailwind-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![Shadcn](https://img.shields.io/badge/Shadcn/UI-000000?style=for-the-badge&logo=shadcnui&logoColor=white)
 
----
-
-## 🗂️ Folder Structure
-
-```
-rto-management-system/
-│
-├── backend/
-│   ├── src/
-│   │   ├── controllers/
-│   │   ├── models/
-│   │   ├── routes/
-│   │   ├── middlewares/
-│   │   ├── utils/
-│   │   ├── db.ts
-│   │   └── index.ts
-│   ├── database_setup.sql
-│   └── package.json
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── contexts/
-│   │   ├── hooks/
-│   │   ├── pages/
-│   │   ├── services/
-│   │   ├── types/
-│   │   └── App.tsx
-│   └── package.json
-│
-├── .gitignore
-└── README.md
-```
-
----
-
-## 🔐 Authentication & Security
-
-- JWT-based authentication
-- Refresh token mechanism
-- Role-based route protection
-- Password hashing with bcrypt
-- Environment variable security
-
----
-
-## 📡 API Overview
-
-| Method | Endpoint | Description | Role |
-|--------|----------|-------------|------|
-| POST | `/api/auth/register` | Citizen registration | Public |
-| POST | `/api/auth/login` | Login | All |
-| GET | `/api/users/profile` | View profile | Authenticated |
-| POST | `/api/vehicles` | Register vehicle | Citizen |
-| GET | `/api/driving-license` | View license | Citizen |
-| POST | `/api/challans` | Issue challan | Police |
-| PUT | `/api/dl-applications/:id/approve` | Approve license | RTO Officer |
-| GET | `/api/analytics` | View analytics | Admin |
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js (v18+)
-- PostgreSQL
-- npm or yarn
-
-### Backend Setup
-
-```bash
-cd backend
-npm install
-# Configure .env with database credentials
-npm run dev
-```
-
-### Frontend Setup
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
----
-
-## 🧪 Testing
-
-- Postman collection included for API testing
-- Role-wise token testing
-- API Testing Guide available in `backend/API_TESTING_GUIDE.md`
+</div>
 
 ---
 
 ## 🎯 Features
 
-### Implemented
-- ✅ User authentication (Register/Login/Logout)
-- ✅ Role-based access control (Citizen, Police, RTO Officer, Admin, Auditor)
-- ✅ Driving license application & management
-- ✅ Vehicle registration
-- ✅ Challan management
-- ✅ Appointment booking
-- ✅ Payment processing
-- ✅ Notifications system
-- ✅ Analytics dashboard
-- ✅ RTO Office management
+<div align="center">
 
-### Future Enhancements
-- 📧 Email/SMS notifications
-- 📱 Mobile-responsive improvements
-- 📊 Advanced analytics
-- 📄 Document upload & verification
+| ✅ Implemented | 🚧 Coming Soon |
+|---------------|----------------|
+| 🔐 JWT Authentication | 📧 Email Notifications |
+| 👥 Role-Based Access (6 Roles) | 📱 SMS Alerts |
+| 🪪 DL Application & Management | 📊 Advanced Analytics |
+| 🚗 Vehicle Registration | 📄 Document Verification |
+| 🎫 Challan Management | 🤖 AI-Powered Insights |
+| 📅 Appointment Booking | 🌐 Multi-language Support |
+| 💳 Payment Processing | |
+| 🔔 Notifications System | |
+| 📈 Analytics Dashboard | |
+| 🏢 RTO Office Management | |
+
+</div>
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+```bash
+Node.js 18+  •  PostgreSQL 15+  •  npm/yarn
+```
+
+### ⚡ One-Minute Setup
+
+<details>
+<summary><b>📦 Backend Setup</b></summary>
+
+```bash
+# Navigate to backend
+cd backend
+
+# Install dependencies
+npm install
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your database credentials
+
+# Run database setup
+psql -U postgres -f database_setup.sql
+
+# Start development server
+npm run dev
+```
+
+🟢 Backend runs at `http://localhost:5000`
+
+</details>
+
+<details>
+<summary><b>🎨 Frontend Setup</b></summary>
+
+```bash
+# Navigate to frontend
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+🟢 Frontend runs at `http://localhost:5173`
+
+</details>
+
+---
+
+## 📁 Project Structure
+
+```
+📦 rto-management-system
+├── 🔧 backend/
+│   ├── 📂 src/
+│   │   ├── 🎮 controllers/     # Request handlers
+│   │   ├── 📊 models/          # Database models
+│   │   ├── 🛣️ routes/          # API routes
+│   │   ├── 🛡️ middlewares/     # Auth & validation
+│   │   ├── 🔧 utils/           # Helper functions
+│   │   ├── 💾 db.ts            # Database connection
+│   │   └── 🚀 index.ts         # Entry point
+│   └── 📋 package.json
+│
+├── 🎨 frontend/
+│   ├── 📂 src/
+│   │   ├── 🧩 components/      # Reusable UI components
+│   │   ├── 🌐 contexts/        # React contexts
+│   │   ├── 🪝 hooks/           # Custom hooks
+│   │   ├── 📄 pages/           # Page components
+│   │   ├── 🔌 services/        # API services
+│   │   ├── 📝 types/           # TypeScript types
+│   │   └── 📱 App.tsx          # Root component
+│   └── 📋 package.json
+│
+└── 📖 README.md
+```
+
+---
+
+## 🔌 API Endpoints
+
+<details>
+<summary><b>🔐 Authentication</b></summary>
+
+| Method | Endpoint | Description |
+|:------:|----------|-------------|
+| `POST` | `/api/auth/register` | Register new user |
+| `POST` | `/api/auth/login` | User login |
+| `POST` | `/api/auth/logout` | User logout |
+| `POST` | `/api/auth/forgot-password` | Password reset |
+
+</details>
+
+<details>
+<summary><b>👤 User Management</b></summary>
+
+| Method | Endpoint | Description |
+|:------:|----------|-------------|
+| `GET` | `/api/users/profile` | Get user profile |
+| `PUT` | `/api/users/profile` | Update profile |
+| `GET` | `/api/users` | List all users (Admin) |
+
+</details>
+
+<details>
+<summary><b>🪪 Driving License</b></summary>
+
+| Method | Endpoint | Description |
+|:------:|----------|-------------|
+| `POST` | `/api/dl-applications` | Apply for DL |
+| `GET` | `/api/dl-applications` | View applications |
+| `PUT` | `/api/dl-applications/:id/approve` | Approve DL |
+| `GET` | `/api/driving-license` | View license |
+
+</details>
+
+<details>
+<summary><b>🚗 Vehicles</b></summary>
+
+| Method | Endpoint | Description |
+|:------:|----------|-------------|
+| `POST` | `/api/vehicles` | Register vehicle |
+| `GET` | `/api/vehicles` | List vehicles |
+| `GET` | `/api/vehicles/:id` | Vehicle details |
+
+</details>
+
+<details>
+<summary><b>🎫 Challans</b></summary>
+
+| Method | Endpoint | Description |
+|:------:|----------|-------------|
+| `POST` | `/api/challans` | Issue challan |
+| `GET` | `/api/challans` | List challans |
+| `PUT` | `/api/challans/:id/pay` | Pay challan |
+
+</details>
+
+---
+
+## 🔒 Security Features
+
+<div align="center">
+
+| Feature | Description |
+|---------|-------------|
+| 🔐 **JWT Tokens** | Secure authentication with access & refresh tokens |
+| 🛡️ **RBAC** | Role-Based Access Control for 6 different user types |
+| 🔑 **Bcrypt** | Industry-standard password hashing |
+| 🚫 **Rate Limiting** | Protection against brute force attacks |
+| ✅ **Input Validation** | Comprehensive request validation |
+| 🔒 **CORS** | Configured Cross-Origin Resource Sharing |
+
+</div>
+
+---
+
+## 🧪 Testing
+
+```bash
+# Import Postman collection from backend/postman_collection.json
+# Refer to backend/API_TESTING_GUIDE.md for detailed instructions
+```
+
+---
+
+## 🤝 Contributing
+
+<div align="center">
+
+**Contributions are welcome! Here's how you can help:**
+
+</div>
+
+1. 🍴 **Fork** the repository
+2. 🌿 **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. 💾 **Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. 📤 **Push** to the branch (`git push origin feature/amazing-feature`)
+5. 🎉 **Open** a Pull Request
 
 ---
 
 ## 📄 License
 
-This project is developed for **learning, demonstration, and academic purposes**.
+<div align="center">
+
+This project is developed for **educational and demonstration purposes**.
 
 ---
 
-> *This project emphasizes clean architecture, simplicity, and real-world applicability.*
+<br/>
+
+**⭐ If you found this project helpful, please give it a star!**
+
+<br/>
+
+Made with ❤️ and ☕
+
+</div>
