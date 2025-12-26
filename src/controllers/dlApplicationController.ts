@@ -7,6 +7,7 @@ import {
   getDlApplicationsByUser,
   verifyDlApplication,
   scheduleDrivingTest,
+  updateTestResult,
 } from "../models/dlApplicationModel";
 import { createNotification } from "../models/notificationModel";
 
@@ -124,5 +125,34 @@ export const scheduleTest = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error("Error scheduling test:", error);
     res.status(500).json({ success: false, message: "Failed to schedule test" });
+  }
+};
+
+// Record test result (Officer)
+export const recordTestResult = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { result, score } = req.body;
+
+    if (!result || !["PASS", "FAIL"].includes(result)) {
+      return res.status(400).json({ success: false, message: "Valid result (PASS or FAIL) is required" });
+    }
+
+    const application = await updateTestResult(id, result);
+
+    if (!application) {
+      return res.status(404).json({ success: false, message: "Application not found or test not scheduled" });
+    }
+
+    const message = result === "PASS" 
+      ? `Congratulations! You passed your driving test${score ? ` with a score of ${score}` : ''}.`
+      : `Unfortunately, you did not pass your driving test. You may reschedule for another attempt.`;
+
+    await createNotification(application.user_id, message);
+
+    res.json({ success: true, message: "Test result recorded", data: { application } });
+  } catch (error) {
+    console.error("Error recording test result:", error);
+    res.status(500).json({ success: false, message: "Failed to record test result" });
   }
 };

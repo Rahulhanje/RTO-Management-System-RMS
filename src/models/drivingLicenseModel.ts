@@ -25,9 +25,10 @@ const generateDlNumber = (state: string = "DL"): string => {
 export const createDrivingLicense = async (
   user_id: string,
   license_type: string = "LMV",
-  rto_office_id?: string
+  rto_office_id?: string,
+  custom_dl_number?: string
 ): Promise<DrivingLicense> => {
-  const dl_number = generateDlNumber();
+  const dl_number = custom_dl_number || generateDlNumber();
   const issue_date = new Date();
   const expiry_date = new Date();
   expiry_date.setFullYear(expiry_date.getFullYear() + 20);

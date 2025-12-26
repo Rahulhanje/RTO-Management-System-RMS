@@ -13,6 +13,7 @@ import { createNotification } from "../models/notificationModel";
 export const approveApplication = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
+    const { dl_number } = req.body;
     const adminId = req.user?.id;
 
     if (!adminId) {
@@ -36,7 +37,7 @@ export const approveApplication = async (req: AuthRequest, res: Response) => {
 
     await approveDlApplication(id, adminId);
 
-    const license = await createDrivingLicense(application.user_id, application.license_type, application.rto_office_id);
+    const license = await createDrivingLicense(application.user_id, application.license_type, application.rto_office_id, dl_number);
 
     await createNotification(application.user_id, `Your driving license has been issued! DL Number: ${license.dl_number}`);
 

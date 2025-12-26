@@ -20,7 +20,7 @@ router.get("/vehicles/my", authMiddleware, roleMiddleware([ROLES.CITIZEN]), getM
 router.post("/vehicles/:id/transfer", authMiddleware, roleMiddleware([ROLES.CITIZEN]), transferOwnership);
 
 // Admin routes
-router.get("/vehicles", authMiddleware, roleMiddleware([ROLES.SUPER_ADMIN, ROLES.RTO_ADMIN]), listVehicles);
+router.get("/vehicles", authMiddleware, roleMiddleware([ROLES.SUPER_ADMIN, ROLES.RTO_ADMIN, ROLES.RTO_OFFICER]), listVehicles);
 router.put("/vehicles/:id/scrap", authMiddleware, roleMiddleware([ROLES.SUPER_ADMIN, ROLES.RTO_ADMIN]), markVehicleScrapped);
 
 // Officer routes
