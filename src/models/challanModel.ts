@@ -50,8 +50,15 @@ export const getChallansByVehicle = async (vehicle_id: string): Promise<Challan[
 // Get challans by user id (for citizens viewing their own challans)
 export const getChallansByUser = async (user_id: string): Promise<Challan[]> => {
   const query = `
-    SELECT c.* FROM challans c
+    SELECT 
+      c.*,
+      v.registration_number as vehicle_number,
+      p.transaction_id,
+      p.payment_method,
+      p.paid_at
+    FROM challans c
     JOIN vehicles v ON c.vehicle_id = v.id
+    LEFT JOIN payments p ON c.id = p.challan_id AND p.status = 'SUCCESS'
     WHERE v.owner_id = $1
     ORDER BY c.issued_at DESC
   `;

@@ -136,7 +136,7 @@ export const approveVehicleTransfer = async (transferId: string, approvedBy: str
 
     // Update transfer status
     await client.query(
-      "UPDATE vehicle_transfers SET status = 'APPROVED', approved_by = $1, approved_at = NOW() WHERE id = $2",
+      "UPDATE vehicle_transfers SET status = 'APPROVED', approved_by = $1, approved_at = NOW() AT TIME ZONE 'UTC' WHERE id = $2",
       [approvedBy, transferId]
     );
 
@@ -158,7 +158,7 @@ export const approveVehicleTransfer = async (transferId: string, approvedBy: str
 
 // Mark vehicle as scrapped
 export const scrapVehicle = async (id: string): Promise<Vehicle | null> => {
-  const query = `UPDATE vehicles SET status = 'SCRAPPED', scrapped_at = NOW(), updated_at = NOW() WHERE id = $1 RETURNING *`;
+  const query = `UPDATE vehicles SET status = 'SCRAPPED', scrapped_at = NOW() AT TIME ZONE 'UTC', updated_at = NOW() AT TIME ZONE 'UTC' WHERE id = $1 RETURNING *`;
   const result = await pool.query(query, [id]);
   return result.rows[0] || null;
 };

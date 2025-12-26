@@ -68,7 +68,7 @@ export const updateDlApplicationStatus = async (
 // Verify DL application documents
 export const verifyDlApplication = async (id: string, verifiedBy: string): Promise<DlApplication | null> => {
   const query = `
-    UPDATE dl_applications SET status = 'VERIFIED', verified_by = $1, verified_at = NOW(), updated_at = NOW()
+    UPDATE dl_applications SET status = 'VERIFIED', verified_by = $1, verified_at = NOW() AT TIME ZONE 'UTC', updated_at = NOW() AT TIME ZONE 'UTC'
     WHERE id = $2 AND status = 'PENDING'
     RETURNING *
   `;
@@ -102,7 +102,7 @@ export const updateTestResult = async (id: string, result: string): Promise<DlAp
 // Approve DL application
 export const approveDlApplication = async (id: string, approvedBy: string): Promise<DlApplication | null> => {
   const query = `
-    UPDATE dl_applications SET status = 'APPROVED', approved_by = $1, approved_at = NOW(), updated_at = NOW()
+    UPDATE dl_applications SET status = 'APPROVED', approved_by = $1, approved_at = NOW() AT TIME ZONE 'UTC', updated_at = NOW() AT TIME ZONE 'UTC'
     WHERE id = $2 AND status = 'TEST_PASSED'
     RETURNING *
   `;

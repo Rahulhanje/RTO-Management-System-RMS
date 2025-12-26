@@ -69,6 +69,7 @@ export const verifyAPayment = async (req: AuthRequest, res: Response) => {
 export const payChallan = async (req: AuthRequest, res: Response) => {
   try {
     const { challanId } = req.params;
+    const { payment_method, transaction_id } = req.body;
     const user_id = req.user?.id;
 
     if (!user_id) {
@@ -85,7 +86,7 @@ export const payChallan = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ success: false, message: "Challan already paid" });
     }
 
-    const payment = await createPayment(challanId, user_id, challan.amount);
+    const payment = await createPayment(challanId, user_id, challan.amount, payment_method, transaction_id);
 
     await updateChallanStatus(challanId, "PAID");
 

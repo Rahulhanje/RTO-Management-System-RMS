@@ -39,14 +39,16 @@ export const initiatePayment = async (
 export const createPayment = async (
   challan_id: string,
   user_id: string,
-  amount: number
+  amount: number,
+  payment_method?: string,
+  transaction_id?: string
 ): Promise<Payment> => {
   const query = `
-    INSERT INTO payments (challan_id, user_id, amount, payment_type, status, paid_at)
-    VALUES ($1, $2, $3, 'CHALLAN', 'SUCCESS', CURRENT_TIMESTAMP)
-    RETURNING *
+    INSERT INTO payments (challan_id, user_id, amount, payment_type, status, paid_at, payment_method, transaction_id)
+    VALUES ($1, $2, $3, 'CHALLAN', 'SUCCESS', NOW() AT TIME ZONE 'UTC', $4, $5)
+    RETURNING *, paid_at AT TIME ZONE 'UTC' as paid_at
   `;
-  const values = [challan_id, user_id, amount];
+  const values = [challan_id, user_id, amount, payment_method || null, transaction_id || null];
   const result = await pool.query(query, values);
   return result.rows[0];
 };
@@ -59,7 +61,7 @@ export const verifyPayment = async (
 ): Promise<Payment | null> => {
   const query = `
     UPDATE payments 
-    SET status = 'SUCCESS', transaction_id = $2, payment_method = $3, paid_at = CURRENT_TIMESTAMP
+    SET status = 'SUCCESS', transaction_id = $2, payment_method = $3, paid_at = NOW() AT TIME ZONE 'UTC'
     WHERE id = $1 AND status = 'PENDING'
     RETURNING *
   `;
