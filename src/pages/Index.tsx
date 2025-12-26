@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { PublicLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import DigitalGlobe from '@/components/DigitalGlobe';
 import {
   Car,
   CreditCard,
@@ -111,81 +112,102 @@ const Index: React.FC = () => {
         </div>
 
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
+          <div className="grid lg:grid-cols-2 gap-8 items-center">
+            {/* Left Content */}
+            <div className="text-center lg:text-left">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+              >
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6">
+                  <Zap className="h-4 w-4" />
+                  India's Digital RTO Revolution
+                </span>
+              </motion.div>
+
+              <motion.h1
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight"
+              >
+                Your Complete{' '}
+                <span className="gradient-text">RTO Services</span>{' '}
+                at Your Fingertips
+              </motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl lg:max-w-none"
+              >
+                Experience seamless vehicle registration, driving license services, 
+                challan payments, and more with India's most advanced digital RTO platform.
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
+              >
+                <Button size="lg" className="btn-gradient text-lg px-8" asChild>
+                  <Link to="/auth/register">
+                    Get Started Free
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" className="text-lg px-8" asChild>
+                  <Link to="/services">
+                    Explore Services
+                  </Link>
+                </Button>
+              </motion.div>
+
+              {/* Trust Badges */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="mt-12 flex flex-wrap justify-center lg:justify-start gap-6 text-muted-foreground"
+              >
+                <div className="flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-success" />
+                  <span className="text-sm">Government Verified</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-secondary" />
+                  <span className="text-sm">Pan India Coverage</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-primary" />
+                  <span className="text-sm">24/7 Available</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Smartphone className="h-5 w-5 text-accent" />
+                  <span className="text-sm">Mobile Friendly</span>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Right - 3D Globe */}
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="hidden lg:block h-[500px] relative"
             >
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6">
-                <Zap className="h-4 w-4" />
-                India's Digital RTO Revolution
-              </span>
-            </motion.div>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight"
-            >
-              Your Complete{' '}
-              <span className="gradient-text">RTO Services</span>{' '}
-              at Your Fingertips
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
-            >
-              Experience seamless vehicle registration, driving license services, 
-              challan payments, and more with India's most advanced digital RTO platform.
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
-            >
-              <Button size="lg" className="btn-gradient text-lg px-8" asChild>
-                <Link to="/auth/register">
-                  Get Started Free
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" className="text-lg px-8" asChild>
-                <Link to="/services">
-                  Explore Services
-                </Link>
-              </Button>
-            </motion.div>
-
-            {/* Trust Badges */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="mt-12 flex flex-wrap justify-center gap-6 text-muted-foreground"
-            >
-              <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-success" />
-                <span className="text-sm">Government Verified</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-secondary" />
-                <span className="text-sm">Pan India Coverage</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
-                <span className="text-sm">24/7 Available</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Smartphone className="h-5 w-5 text-accent" />
-                <span className="text-sm">Mobile Friendly</span>
-              </div>
+              <Suspense fallback={
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="w-20 h-20 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+                </div>
+              }>
+                <DigitalGlobe />
+              </Suspense>
+              {/* Glow effect behind globe */}
+              <div className="absolute inset-0 bg-gradient-radial from-primary/20 via-transparent to-transparent pointer-events-none" />
             </motion.div>
           </div>
         </div>
