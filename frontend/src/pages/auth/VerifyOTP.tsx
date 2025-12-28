@@ -12,9 +12,12 @@ const VerifyOTP: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const email = searchParams.get('email') || '';
+  const mode = searchParams.get('mode') || 'reset'; // 'reset' or 'verification'
   const { toast } = useToast();
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const isVerification = mode === 'verification';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,9 +25,31 @@ const VerifyOTP: React.FC = () => {
       toast({ title: 'Invalid OTP', description: 'Please enter 6-digit OTP', variant: 'destructive' });
       return;
     }
-    
-    // Navigate to reset password page with email and OTP
-    navigate(`/auth/reset-password?email=${encodeURIComponent(email)}&otp=${otp}`);
+
+    if (isVerification) {
+      setIsLoading(true);
+      try {
+        await authService.verifyEmail(email, otp);
+        toast({
+          title: 'Email Verified!',
+          description: 'Your account has been successfully verified. Please login.',
+        });
+        navigate('/auth/login');
+      } catch (error: any) {
+        toast({
+          title: 'Verification Failed',
+          description: error.response?.data?.message || 'Failed to verify OTP',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      // For password reset, we just pass the OTP to the next screen (or verify it here first if we wanted, but previous flow was to pass it)
+      // Actually, standard flow often verifies OTP before letting user set new password.
+      // But adhering to previous logic:
+      navigate(`/auth/reset-password?email=${encodeURIComponent(email)}&otp=${otp}`);
+    }
   };
 
   const handleResendOTP = async () => {
@@ -55,7 +80,7 @@ const VerifyOTP: React.FC = () => {
             <Car className="h-10 w-10 text-primary" />
             <span className="text-2xl font-bold gradient-text">RTO Portal</span>
           </Link>
-          <h1 className="text-2xl font-bold">Verify OTP</h1>
+          <h1 className="text-2xl font-bold">{isVerification ? 'Verify Email' : 'Verify OTP'}</h1>
           <p className="text-muted-foreground">Enter the 6-digit code sent to {email}</p>
         </div>
 
@@ -91,18 +116,26 @@ const VerifyOTP: React.FC = () => {
             </form>
 
             <div className="mt-6 text-center space-y-2">
-              <button
-                type="button"
-                onClick={handleResendOTP}
-                disabled={isLoading}
-                className="text-sm text-muted-foreground hover:text-primary"
-              >
-                {isLoading ? 'Sending...' : "Didn't receive OTP? Resend"}
-              </button>
+              {!isVerification && (
+                <button
+                  type="button"
+                  onClick={handleResendOTP}
+                  disabled={isLoading}
+                  className="text-sm text-muted-foreground hover:text-primary"
+                >
+                  {isLoading ? 'Sending...' : "Didn't receive OTP? Resend"}
+                </button>
+              )}
+              {isVerification && (
+                 <p className="text-xs text-muted-foreground">
+                   Didn't receive code? Check spam or <Link to="/auth/register" className="text-primary hover:underline">try registering again</Link> if you made a mistake.
+                 </p>
+              )}
+              
               <div>
-                <Link to="/auth/forgot-password" className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1">
+                <Link to={isVerification ? "/auth/login" : "/auth/forgot-password"} className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1">
                   <ArrowLeft className="h-4 w-4" />
-                  Back to Forgot Password
+                  {isVerification ? "Back to Login" : "Back to Forgot Password"}
                 </Link>
               </div>
             </div>

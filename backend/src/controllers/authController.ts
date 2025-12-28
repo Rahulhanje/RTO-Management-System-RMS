@@ -14,8 +14,9 @@ import {
   getUserByResetToken,
   clearResetToken,
   updateUserPassword,
+  updateUserStatus,
 } from "../models/userModel";
-import { sendOtpEmail } from "../utils/emailService";
+import { sendOtpEmail, sendVerificationEmail } from "../utils/emailService";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "your_refresh_secret";
@@ -55,12 +56,30 @@ export const register = async (req: Request, res: Response) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    // User created with PENDING_VERIFICATION status by default for CITIZEN
     const user = await createUser(name, email, hashedPassword, "CITIZEN", phone, address, date_of_birth, aadhaar_number);
+
+    // Generate and send OTP for verification
+    const otp = generateOtp();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    await setUserOtp(user.id, otp, expiresAt);
+    
+    // Send verification email
+    const emailSent = await sendVerificationEmail(user.email, otp, user.name);
+    
+    if (!emailSent) {
+      console.error("Failed to send verification email");
+      // We still return success but maybe with a warning or just let them resend later?
+      // For now, we assume it works or they can request resend (logic for resend needed later or they can use forgot password flow to verify technically if we allowed it, but specific resend is better)
+    }
 
     res.status(201).json({
       success: true,
-      message: "Registration successful",
-      data: { user: { id: user.id, name: user.name, email: user.email, role: user.role } },
+      message: "Registration successful. Please check your email for verification OTP.",
+      data: { 
+        user: { id: user.id, name: user.name, email: user.email, role: user.role, status: user.status },
+        requiresVerification: true 
+      },
     });
   } catch (error) {
     console.error("Error registering user:", error);
@@ -80,6 +99,15 @@ export const login = async (req: Request, res: Response) => {
     const user = await getUserByEmail(email);
     if (!user) {
       return res.status(401).json({ success: false, message: "Invalid credentials" });
+    }
+
+    // Check for pending verification
+    if (user.status === "PENDING_VERIFICATION") {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Please verify your email address before logging in",
+        data: { requiresVerification: true, email: user.email }
+      });
     }
 
     if (user.status !== "ACTIVE") {
@@ -200,7 +228,6 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
     if (!emailSent) {
       console.error('Failed to send OTP email, but OTP is saved in database');
-      // Still return success to not reveal if email exists
     }
 
     console.log(`🔐 OTP generated for ${email}: ${otp} (expires in 10 minutes)`);
@@ -264,7 +291,7 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 };
 
-// Verify OTP
+// Verify OTP (Generic - just checks if valid)
 export const verifyOtp = async (req: Request, res: Response) => {
   try {
     const { email, otp } = req.body;
@@ -284,6 +311,33 @@ export const verifyOtp = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error verifying OTP:", error);
     res.status(500).json({ success: false, message: "Failed to verify OTP" });
+  }
+};
+
+// Verify Email (Activates user)
+export const verifyEmail = async (req: Request, res: Response) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, message: "Email and OTP are required" });
+    }
+
+    const user = await verifyUserOtp(email, otp);
+    if (!user) {
+      return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
+    }
+
+    // Activate user
+    await updateUserStatus(user.id, "ACTIVE");
+    await clearUserOtp(user.id);
+
+    // Send welcome email? Maybe later.
+
+    res.json({ success: true, message: "Email verified successfully. You can now login." });
+  } catch (error) {
+    console.error("Error verifying email:", error);
+    res.status(500).json({ success: false, message: "Failed to verify email" });
   }
 };
 

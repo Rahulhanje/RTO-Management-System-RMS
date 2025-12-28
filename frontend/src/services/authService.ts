@@ -38,9 +38,15 @@ export const authService = {
     return response.data;
   },
 
-  // Verify OTP
+  // Verify OTP (Check if valid)
   verifyOtp: async (email: string, otp: string): Promise<ApiResponse<{ resetToken: string }>> => {
     const response = await api.post('/auth/verify-otp', { email, otp });
+    return response.data;
+  },
+
+  // Verify Email (Activate Account)
+  verifyEmail: async (email: string, otp: string): Promise<ApiResponse<null>> => {
+    const response = await api.post('/auth/verify-email', { email, otp });
     return response.data;
   },
 

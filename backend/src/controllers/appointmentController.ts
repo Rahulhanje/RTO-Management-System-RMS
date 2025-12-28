@@ -37,7 +37,7 @@ export const bookAppointment = async (req: AuthRequest, res: Response) => {
 export const listAppointments = async (req: AuthRequest, res: Response) => {
   try {
     const appointments = await getAllAppointments();
-    res.json({ success: true, data: { appointments } });
+    res.status(201).json({ success: true, data: { appointments } });
   } catch (error) {
     console.error("Error fetching appointments:", error);
     res.status(500).json({ success: false, message: "Failed to fetch appointments" });
@@ -54,7 +54,7 @@ export const getMyAppointments = async (req: AuthRequest, res: Response) => {
     }
 
     const appointments = await getAppointmentsByUser(user_id);
-    res.json({ success: true, data: { appointments } });
+    res.status(201).json({ success: true, data: { appointments } });
   } catch (error) {
     console.error("Error fetching appointments:", error);
     res.status(500).json({ success: false, message: "Failed to fetch appointments" });
@@ -71,7 +71,7 @@ export const getAppointment = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ success: false, message: "Appointment not found" });
     }
 
-    res.json({ success: true, data: { appointment } });
+    res.status(201).json({ success: true, data: { appointment } });
   } catch (error) {
     console.error("Error fetching appointment:", error);
     res.status(500).json({ success: false, message: "Failed to fetch appointment" });
@@ -141,7 +141,8 @@ export const cancelMyAppointment = async (req: AuthRequest, res: Response) => {
     }
 
     const updatedAppointment = await cancelAppointment(id);
-    res.json({ success: true, message: "Appointment cancelled", data: { appointment: updatedAppointment } });
+
+    res.status(201).json({ success: true, message: "Appointment cancelled", data: { appointment: updatedAppointment } });
   } catch (error) {
     console.error("Error cancelling appointment:", error);
     res.status(500).json({ success: false, message: "Failed to cancel appointment" });
@@ -170,7 +171,7 @@ export const completeAnAppointment = async (req: AuthRequest, res: Response) => 
     // }
 
     const updatedAppointment = await completeAppointment(id, officer_id, notes);
-    res.json({ success: true, message: "Appointment completed", data: { appointment: updatedAppointment } });
+    res.status(201).json({ success: true, message: "Appointment completed", data: { appointment: updatedAppointment } });
   } catch (error) {
     console.error("Error completing appointment:", error);
     res.status(500).json({ success: false, message: "Failed to complete appointment" });

@@ -31,14 +31,16 @@ export const createUser = async (
   phone?: string,
   address?: string,
   date_of_birth?: string,
-  aadhaar_number?: string
+  aadhaar_number?: string,
+  status: string = "PENDING_VERIFICATION"
 ): Promise<User> => {
   const query = `
-    INSERT INTO users (name, email, password, role, phone, address, date_of_birth, aadhaar_number)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    INSERT INTO users (name, email, password, role, phone, address, date_of_birth, aadhaar_number, status)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     RETURNING *
   `;
-  const values = [name, email, password, role, phone || null, address || null, date_of_birth || null, aadhaar_number || null];
+  const finalStatus = role === "CITIZEN" ? status : "ACTIVE"; // Only citizens need verification for now, others are created by admin usually active
+  const values = [name, email, password, role, phone || null, address || null, date_of_birth || null, aadhaar_number || null, finalStatus];
   const result = await pool.query(query, values);
   return result.rows[0];
 };

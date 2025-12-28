@@ -9,6 +9,7 @@ import {
   resetPassword,
   verifyOtp,
   changePassword,
+  verifyEmail,
 } from "../controllers/authController";
 
 const router = Router();
@@ -20,6 +21,7 @@ router.post("/auth/refresh-token", refreshToken);
 router.post("/auth/forgot-password", forgotPassword);
 router.post("/auth/reset-password", resetPassword);
 router.post("/auth/verify-otp", verifyOtp);
+router.post("/auth/verify-email", verifyEmail);
 
 // Protected routes
 router.post("/auth/logout", authMiddleware, logout);

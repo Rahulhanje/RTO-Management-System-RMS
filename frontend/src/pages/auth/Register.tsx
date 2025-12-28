@@ -18,7 +18,9 @@ const Register: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const success = await register(formData);
-    if (success) navigate('/auth/login');
+    if (success) {
+      navigate(`/auth/verify-otp?email=${encodeURIComponent(formData.email)}&mode=verification`);
+    }
   };
 
   return (
