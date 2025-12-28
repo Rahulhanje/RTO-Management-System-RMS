@@ -91,7 +91,10 @@ const Login: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex items-center justify-between">
+                <Link to="/auth/verify-otp?mode=verification" className="text-sm text-muted-foreground hover:text-primary">
+                  Verify Email
+                </Link>
                 <Link to="/auth/forgot-password" className="text-sm text-primary hover:underline">
                   Forgot password?
                 </Link>

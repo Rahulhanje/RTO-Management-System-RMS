@@ -11,6 +11,8 @@ import {
 } from "../models/paymentModel";
 import { getChallanById, updateChallanStatus } from "../models/challanModel";
 import { createNotification } from "../models/notificationModel";
+import { getUserById } from "../models/userModel";
+import { sendNotificationEmail } from "../utils/emailService";
 
 // Initiate a payment (citizen)
 export const initiateNewPayment = async (req: AuthRequest, res: Response) => {
@@ -58,6 +60,17 @@ export const verifyAPayment = async (req: AuthRequest, res: Response) => {
     // Notify user
     await createNotification(payment.user_id, `Payment of ₹${payment.amount} completed successfully`);
 
+    // Send email notification
+    const user = await getUserById(payment.user_id);
+    if (user) {
+      await sendNotificationEmail(
+        user.email,
+        "Payment Successful",
+        `Your payment of ₹${payment.amount} for ${payment.payment_type} has been successfully processed.\nTransaction ID: ${transaction_id}`,
+        user.name
+      );
+    }
+
     res.json({ success: true, message: "Payment verified", data: { payment } });
   } catch (error) {
     console.error("Error verifying payment:", error);
@@ -91,6 +104,17 @@ export const payChallan = async (req: AuthRequest, res: Response) => {
     await updateChallanStatus(challanId, "PAID");
 
     await createNotification(user_id, `Challan payment of ₹${challan.amount} completed successfully`);
+    
+    // Send email notification
+    const user = await getUserById(user_id);
+    if (user) {
+      await sendNotificationEmail(
+        user.email,
+        "Challan Payment Successful",
+        `Your payment of ₹${challan.amount} for Challan #${challanId} has been successfully processed.\nTransaction ID: ${transaction_id}`,
+        user.name
+      );
+    }
 
     res.status(201).json({ success: true, message: "Payment successful", data: { payment } });
   } catch (error) {
@@ -162,6 +186,17 @@ export const refundAPayment = async (req: AuthRequest, res: Response) => {
 
     // Notify user
     await createNotification(payment.user_id, `Payment of ₹${payment.amount} has been refunded: ${reason}`);
+
+    // Send email notification
+    const user = await getUserById(payment.user_id);
+    if (user) {
+      await sendNotificationEmail(
+        user.email,
+        "Payment Refunded",
+        `Your payment of ₹${payment.amount} has been refunded.\nReason: ${reason}`,
+        user.name
+      );
+    }
 
     res.json({ success: true, message: "Payment refunded", data: { payment } });
   } catch (error) {

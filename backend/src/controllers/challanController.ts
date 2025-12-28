@@ -11,6 +11,8 @@ import {
 } from "../models/challanModel";
 import { createNotification } from "../models/notificationModel";
 import pool from "../db";
+import { getUserById } from "../models/userModel";
+import { sendNotificationEmail } from "../utils/emailService";
 
 // Issue a challan (Police only)
 export const issueChallan = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -41,6 +43,17 @@ export const issueChallan = async (req: AuthRequest, res: Response): Promise<voi
 
     if (vehicleCheck.rows[0].owner_id) {
       await createNotification(vehicleCheck.rows[0].owner_id, `A challan of ₹${amount} has been issued for vehicle ${registration_number} for violation: ${violation_type}`);
+    
+      // Send email notification
+      const user = await getUserById(vehicleCheck.rows[0].owner_id);
+      if (user) {
+        await sendNotificationEmail(
+          user.email,
+          "Challan Issued",
+          `A challan of ₹${amount} has been issued for your vehicle ${registration_number}.\nViolation: ${violation_type}\nLocation: ${location || 'N/A'}`,
+          user.name
+        );
+      }
     }
 
     res.status(201).json({ success: true, message: "Challan issued", data: { challan } });
@@ -171,6 +184,17 @@ export const resolveDispute = async (req: AuthRequest, res: Response) => {
     const vehicleResult = await pool.query("SELECT owner_id FROM vehicles WHERE id = $1", [challan.vehicle_id]);
     if (vehicleResult.rows[0]) {
       await createNotification(vehicleResult.rows[0].owner_id, `Your challan dispute has been resolved: ${resolution}`);
+
+      // Send email notification
+      const user = await getUserById(vehicleResult.rows[0].owner_id);
+      if (user) {
+        await sendNotificationEmail(
+          user.email,
+          "Challan Dispute Resolved",
+          `Your challan dispute has been resolved.\nStatus: ${new_status}\nResolution: ${resolution}`,
+          user.name
+        );
+      }
     }
 
     res.json({ success: true, message: "Dispute resolved", data: { challan } });

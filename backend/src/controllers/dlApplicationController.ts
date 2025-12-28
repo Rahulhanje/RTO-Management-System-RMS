@@ -10,6 +10,8 @@ import {
   updateTestResult,
 } from "../models/dlApplicationModel";
 import { createNotification } from "../models/notificationModel";
+import { sendNotificationEmail } from "../utils/emailService";
+import { getUserById } from "../models/userModel";
 
 // Apply for a driving license (Citizen)
 export const applyForDl = async (req: AuthRequest, res: Response) => {
@@ -95,6 +97,17 @@ export const verifyDlDocuments = async (req: AuthRequest, res: Response) => {
     }
 
     await createNotification(application.user_id, "Your DL application documents have been verified");
+    
+    // Send email notification
+    const user = await getUserById(application.user_id);
+    if (user) {
+      await sendNotificationEmail(
+        user.email,
+        "DL Documents Verified",
+        "Your driving license application documents have been successfully verified. We will schedule your driving test shortly.",
+        user.name
+      );
+    }
 
     res.json({ success: true, message: "Documents verified", data: { application } });
   } catch (error) {
@@ -120,6 +133,17 @@ export const scheduleTest = async (req: AuthRequest, res: Response) => {
     }
 
     await createNotification(application.user_id, `Your driving test has been scheduled for ${test_date}`);
+
+    // Send email notification
+    const user = await getUserById(application.user_id);
+    if (user) {
+      await sendNotificationEmail(
+        user.email,
+        "Driving Test Scheduled",
+        `Your driving test has been scheduled for ${new Date(test_date).toLocaleString()}. Please be present at the RTO office with your documents.`,
+        user.name
+      );
+    }
 
     res.json({ success: true, message: "Test scheduled", data: { application } });
   } catch (error) {
@@ -149,6 +173,17 @@ export const recordTestResult = async (req: AuthRequest, res: Response) => {
       : `Unfortunately, you did not pass your driving test. You may reschedule for another attempt.`;
 
     await createNotification(application.user_id, message);
+
+    // Send email notification
+    const user = await getUserById(application.user_id);
+    if (user) {
+      await sendNotificationEmail(
+        user.email,
+        "Driving Test Result",
+        message,
+        user.name
+      );
+    }
 
     res.json({ success: true, message: "Test result recorded", data: { application } });
   } catch (error) {
