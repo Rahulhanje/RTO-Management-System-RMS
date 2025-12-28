@@ -118,10 +118,10 @@ const AdminAnalytics: React.FC = () => {
                         return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
                       }}
                     />
-                    <YAxis stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `₹${(v/100000).toFixed(1)}L`} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `₹${v.toLocaleString()}`} />
                     <Tooltip 
-                      formatter={(value: number) => [`₹${(value/100000).toFixed(1)}L`, 'Revenue']} 
-                      contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                      formatter={(value: number, name: string) => [`₹${value.toLocaleString()}`, 'Total Revenue']} 
+                      contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
                       labelFormatter={(label) => {
                         const date = new Date(label + '-01');
                         return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -181,7 +181,7 @@ const AdminAnalytics: React.FC = () => {
                         <Cell key={index} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value: number) => [`₹${(value/100000).toFixed(1)}L`, 'Revenue']} />
+                    <Tooltip formatter={(value: number, name: string) => [`₹${value.toLocaleString()}`, name]} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
@@ -213,10 +213,10 @@ const AdminAnalytics: React.FC = () => {
                       return date.toLocaleDateString('en-US', { month: 'short' });
                     }}
                   />
-                  <YAxis stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `₹${(v/100000).toFixed(0)}L`} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `₹${v.toLocaleString()}`} />
                   <Tooltip 
-                    contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
-                    formatter={(value: number) => `₹${(value/100000).toFixed(1)}L`}
+                    contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }}
+                    formatter={(value: number, name: string) => [`₹${value.toLocaleString()}`, name]}
                     labelFormatter={(label) => {
                       const date = new Date(label + '-01');
                       return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });

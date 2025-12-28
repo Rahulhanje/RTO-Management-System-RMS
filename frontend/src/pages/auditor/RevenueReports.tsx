@@ -172,14 +172,23 @@ const RevenueReports: React.FC = () => {
           <CardContent>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={revenueByType} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                    {revenueByType.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: number) => [`₹${(value / 100000).toFixed(1)}L`, 'Revenue']} contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }} />
-                </PieChart>
+          <PieChart>
+            <Pie data={revenueByType} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+              {revenueByType.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip 
+              formatter={(value: number) => [`₹${(value / 100000).toFixed(1)}L`, 'Revenue']} 
+              contentStyle={{ 
+                background: 'hsl(var(--card))', 
+                border: '1px solid hsl(var(--border))',
+                color: '#ffffff'
+              }} 
+              labelStyle={{ color: '#ffffff' }}
+              itemStyle={{ color: '#ffffff' }}
+            />
+          </PieChart>
               </ResponsiveContainer>
             </div>
           </CardContent>

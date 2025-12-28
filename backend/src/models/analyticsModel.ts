@@ -44,11 +44,11 @@ export interface RevenueReport {
 
 // Get revenue analytics (by month)
 export const getRevenueAnalytics = async (startDate?: string, endDate?: string): Promise<RevenueReport[]> => {
-  let dateFilter = "";
+  let dateFilter = "WHERE status = 'SUCCESS' AND paid_at IS NOT NULL";
   const values: string[] = [];
 
   if (startDate && endDate) {
-    dateFilter = "WHERE paid_at >= $1 AND paid_at <= $2";
+    dateFilter += " AND paid_at >= $1 AND paid_at <= $2";
     values.push(startDate, endDate);
   }
 
