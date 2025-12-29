@@ -14,7 +14,7 @@ export const useNotifications = (autoRefresh: boolean = false) => {
         const notificationsData = (response.data as any).notifications || response.data || [];
         if (Array.isArray(notificationsData)) {
           setNotifications(notificationsData);
-          setUnreadCount(notificationsData.filter(n => !n.read).length);
+          setUnreadCount(notificationsData.filter(n => !n.is_read).length);
         } else {
           setNotifications([]);
           setUnreadCount(0);

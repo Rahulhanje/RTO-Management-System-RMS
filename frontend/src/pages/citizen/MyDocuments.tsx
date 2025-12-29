@@ -1,31 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Upload, CheckCircle2, Clock, XCircle, Eye, Download, Trash2, Plus, Image, File } from 'lucide-react';
+import { documentService, type Document } from '@/services';
+import { useAuth } from '@/contexts/AuthContext';
+import { FileText, Upload, CheckCircle2, Clock, XCircle, Eye, Download, Trash2, Plus, Image, File, Loader2 } from 'lucide-react';
 
-interface Document {
-  id: string;
-  name: string;
-  type: 'AADHAAR' | 'PAN' | 'ADDRESS_PROOF' | 'PHOTO' | 'SIGNATURE' | 'OTHER';
-  status: 'PENDING' | 'VERIFIED' | 'REJECTED';
-  uploaded_at: string;
-  verified_at?: string;
-  rejection_reason?: string;
-  file_url?: string;
-}
-
-const mockDocuments: Document[] = [
-  { id: '1', name: 'Aadhaar Card', type: 'AADHAAR', status: 'VERIFIED', uploaded_at: '2024-12-01', verified_at: '2024-12-02', file_url: '#' },
-  { id: '2', name: 'PAN Card', type: 'PAN', status: 'VERIFIED', uploaded_at: '2024-12-01', verified_at: '2024-12-02', file_url: '#' },
-  { id: '3', name: 'Address Proof - Electricity Bill', type: 'ADDRESS_PROOF', status: 'PENDING', uploaded_at: '2024-12-15', file_url: '#' },
-  { id: '4', name: 'Passport Photo', type: 'PHOTO', status: 'REJECTED', uploaded_at: '2024-12-10', rejection_reason: 'Photo background not white', file_url: '#' },
-  { id: '5', name: 'Signature', type: 'SIGNATURE', status: 'VERIFIED', uploaded_at: '2024-12-01', verified_at: '2024-12-02', file_url: '#' },
-];
+type DocumentType = 'AADHAAR' | 'PAN' | 'ADDRESS_PROOF' | 'PHOTO' | 'SIGNATURE' | 'INSURANCE' | 'OTHER';
 
 const documentTypeLabels: Record<string, string> = {
   AADHAAR: 'Aadhaar Card',
@@ -55,34 +42,142 @@ const getDocumentIcon = (type: string) => {
 
 const MyDocuments: React.FC = () => {
   const { toast } = useToast();
-  const [documents, setDocuments] = useState<Document[]>(mockDocuments);
+  const { user } = useAuth();
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedDocType, setSelectedDocType] = useState<DocumentType>('OTHER');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleUpload = (type: string) => {
-    toast({
-      title: 'Feature Coming Soon',
-      description: `Document upload functionality for ${documentTypeLabels[type] || type} will be available soon`,
-    });
+  useEffect(() => {
+    fetchDocuments();
+  }, []);
+
+  const fetchDocuments = async () => {
+    setIsLoading(true);
+    try {
+      const response = await documentService.getMyDocuments();
+      if (response.success && response.data) {
+        setDocuments(response.data.documents || []);
+      }
+    } catch (error: any) {
+      console.error('Error fetching documents:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load documents',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleView = (doc: Document) => {
-    toast({
-      title: 'Feature Coming Soon',
-      description: `Document viewing for ${doc.name} will be available soon`,
-    });
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: 'Invalid File Type',
+          description: 'Please upload a JPG, PNG, or PDF file',
+          variant: 'destructive',
+        });
+        return;
+      }
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: 'File Too Large',
+          description: 'File size must be less than 5MB',
+          variant: 'destructive',
+        });
+        return;
+      }
+      setSelectedFile(file);
+    }
   };
 
-  const handleDelete = (doc: Document) => {
-    setDocuments(prev => prev.filter(d => d.id !== doc.id));
-    toast({
-      title: 'Document Deleted',
-      description: `${doc.name} has been removed`,
-    });
+  const handleUpload = async () => {
+    if (!selectedFile || !user) {
+      toast({
+        title: 'Error',
+        description: 'Please select a file to upload',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      await documentService.uploadDocument(
+        selectedFile,
+        'USER',
+        user.id,
+        selectedDocType
+      );
+      toast({
+        title: 'Success',
+        description: 'Document uploaded successfully',
+      });
+      setIsUploadDialogOpen(false);
+      setSelectedFile(null);
+      setSelectedDocType('OTHER');
+      await fetchDocuments();
+    } catch (error: any) {
+      console.error('Error uploading document:', error);
+      toast({
+        title: 'Upload Failed',
+        description: error.response?.data?.message || 'Failed to upload document',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleView = async (doc: Document) => {
+    try {
+      const blob = await documentService.downloadDocument(doc.id);
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (error: any) {
+      console.error('Error viewing document:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to open document',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDelete = async (doc: Document) => {
+    try {
+      await documentService.deleteDocument(doc.id);
+      toast({
+        title: 'Document Deleted',
+        description: `${doc.file_name} has been removed`,
+      });
+      await fetchDocuments();
+    } catch (error: any) {
+      console.error('Error deleting document:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete document',
+        variant: 'destructive',
+      });
+    }
   };
 
   const verifiedCount = documents.filter(d => d.status === 'VERIFIED').length;
   const pendingCount = documents.filter(d => d.status === 'PENDING').length;
   const rejectedCount = documents.filter(d => d.status === 'REJECTED').length;
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
 
   return (
     <div className="space-y-6 fade-in-up">
@@ -91,9 +186,59 @@ const MyDocuments: React.FC = () => {
           <h1 className="text-2xl font-bold">My Documents</h1>
           <p className="text-muted-foreground">Upload and manage your identity documents</p>
         </div>
-        <Button onClick={() => handleUpload('OTHER')}>
-          <Plus className="h-4 w-4 mr-2" />Upload Document
-        </Button>
+        <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />Upload Document
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="glass-card">
+            <DialogHeader>
+              <DialogTitle>Upload Document</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Document Type</Label>
+                <Select value={selectedDocType} onValueChange={(v) => setSelectedDocType(v as DocumentType)}>
+                  <SelectTrigger className="bg-muted/50">
+                    <SelectValue placeholder="Select document type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(documentTypeLabels).map(([key, label]) => (
+                      <SelectItem key={key} value={key}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>File</Label>
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.pdf"
+                  onChange={handleFileSelect}
+                  className="bg-muted/50"
+                />
+                {selectedFile && (
+                  <p className="text-sm text-muted-foreground">
+                    Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Accepted formats: JPG, PNG, PDF (Max 5MB)
+                </p>
+              </div>
+              <Button
+                onClick={handleUpload}
+                className="w-full btn-gradient"
+                disabled={!selectedFile || isUploading}
+              >
+                {isUploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                {isUploading ? 'Uploading...' : 'Upload Document'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Summary Cards */}
@@ -148,7 +293,7 @@ const MyDocuments: React.FC = () => {
         <CardContent>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {['AADHAAR', 'PAN', 'ADDRESS_PROOF', 'PHOTO', 'SIGNATURE'].map((type) => {
-              const doc = documents.find(d => d.type === type);
+              const doc = documents.find(d => d.document_type === type);
               return (
                 <Card key={type} className={`glass-card-hover ${doc?.status === 'REJECTED' ? 'border-destructive/30' : doc?.status === 'VERIFIED' ? 'border-success/30' : ''}`}>
                   <CardContent className="pt-6">
@@ -159,7 +304,7 @@ const MyDocuments: React.FC = () => {
                         </div>
                         <div>
                           <p className="font-medium">{documentTypeLabels[type]}</p>
-                          {doc && <p className="text-xs text-muted-foreground">Uploaded {new Date(doc.uploaded_at).toLocaleDateString()}</p>}
+                          {doc && <p className="text-xs text-muted-foreground">Uploaded {new Date(doc.created_at).toLocaleDateString()}</p>}
                         </div>
                       </div>
                     </div>
@@ -174,14 +319,14 @@ const MyDocuments: React.FC = () => {
                             <Eye className="h-3 w-3 mr-1" />View
                           </Button>
                           {doc.status === 'REJECTED' && (
-                            <Button variant="outline" size="sm" onClick={() => handleUpload(type)}>
+                            <Button variant="outline" size="sm" onClick={() => { setSelectedDocType(type as DocumentType); setIsUploadDialogOpen(true); }}>
                               <Upload className="h-3 w-3 mr-1" />Re-upload
                             </Button>
                           )}
                         </div>
                       </div>
                     ) : (
-                      <Button variant="outline" className="w-full" onClick={() => handleUpload(type)}>
+                      <Button variant="outline" className="w-full" onClick={() => { setSelectedDocType(type as DocumentType); setIsUploadDialogOpen(true); }}>
                         <Upload className="h-4 w-4 mr-2" />Upload
                       </Button>
                     )}
@@ -205,14 +350,14 @@ const MyDocuments: React.FC = () => {
               <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No Documents</h3>
               <p className="text-muted-foreground mb-4">Upload your first document to get started</p>
-              <Button onClick={() => handleUpload('OTHER')}>
+              <Button onClick={() => setIsUploadDialogOpen(true)}>
                 <Upload className="h-4 w-4 mr-2" />Upload Document
               </Button>
             </div>
           ) : (
             <div className="space-y-3">
               {documents.map((doc, index) => {
-                const IconComponent = getDocumentIcon(doc.type);
+                const IconComponent = getDocumentIcon(doc.document_type);
                 return (
                   <motion.div key={doc.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
                     <div className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
@@ -221,8 +366,8 @@ const MyDocuments: React.FC = () => {
                           <IconComponent className="h-6 w-6" />
                         </div>
                         <div>
-                          <p className="font-semibold">{doc.name}</p>
-                          <p className="text-sm text-muted-foreground">{documentTypeLabels[doc.type]} • Uploaded {new Date(doc.uploaded_at).toLocaleDateString()}</p>
+                          <p className="font-semibold">{doc.file_name}</p>
+                          <p className="text-sm text-muted-foreground">{documentTypeLabels[doc.document_type]} • Uploaded {new Date(doc.created_at).toLocaleDateString()}</p>
                           {doc.rejection_reason && <p className="text-xs text-destructive mt-1">{doc.rejection_reason}</p>}
                         </div>
                       </div>

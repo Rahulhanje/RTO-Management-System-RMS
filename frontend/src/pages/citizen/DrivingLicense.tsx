@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { dlService, rtoService } from '@/services';
+import { dlService, rtoService, documentService } from '@/services';
 import { DrivingLicense, DLApplication, RTOOffice, LicenseType, User } from '@/types';
-import { CreditCard, Plus, QrCode, RefreshCw, Loader2, CheckCircle2, Clock, XCircle, FileText, Calendar, User as UserIcon, MapPin, Phone, Mail } from 'lucide-react';
+import { CreditCard, Plus, QrCode, RefreshCw, Loader2, CheckCircle2, Clock, XCircle, FileText, Calendar, User as UserIcon, MapPin, Phone, Mail, Upload } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const licenseTypes: LicenseType[] = ['LMV', 'HMV', 'MCWG', 'MCWOG', 'TRANS'];
@@ -43,6 +44,11 @@ const DrivingLicensePage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [digitalDLOpen, setDigitalDLOpen] = useState(false);
   const [formData, setFormData] = useState({ rto_office_id: '', license_type: '' as LicenseType });
+  const [documents, setDocuments] = useState<{
+    aadhaar: File | null;
+    photo: File | null;
+    addressProof: File | null;
+  }>({ aadhaar: null, photo: null, addressProof: null });
 
   useEffect(() => {
     fetchData();
@@ -90,11 +96,44 @@ const DrivingLicensePage: React.FC = () => {
     try {
       const response = await dlService.apply(formData.rto_office_id, formData.license_type);
       if (response.success) {
-        toast({ title: 'Success', description: 'DL application submitted!' });
+        const applicationData = (response.data as any).application || response.data;
+        const applicationId = applicationData?.id;
+        
+        // Upload documents if application was created successfully
+        if (applicationId) {
+          const uploadPromises = [];
+          
+          if (documents.aadhaar) {
+            uploadPromises.push(
+              documentService.uploadDocument(documents.aadhaar, 'DL_APPLICATION', applicationId, 'AADHAAR')
+            );
+          }
+          if (documents.photo) {
+            uploadPromises.push(
+              documentService.uploadDocument(documents.photo, 'DL_APPLICATION', applicationId, 'PHOTO')
+            );
+          }
+          if (documents.addressProof) {
+            uploadPromises.push(
+              documentService.uploadDocument(documents.addressProof, 'DL_APPLICATION', applicationId, 'ADDRESS_PROOF')
+            );
+          }
+          
+          if (uploadPromises.length > 0) {
+            await Promise.all(uploadPromises);
+            toast({ title: 'Success', description: 'DL application and documents submitted successfully!' });
+          } else {
+            toast({ title: 'Success', description: 'DL application submitted! Please upload documents from your documents page.' });
+          }
+        } else {
+          toast({ title: 'Success', description: 'DL application submitted!' });
+        }
+        
         fetchData();
       }
       setIsDialogOpen(false);
       setFormData({ rto_office_id: '', license_type: '' as LicenseType });
+      setDocuments({ aadhaar: null, photo: null, addressProof: null });
     } catch (error: any) {
       toast({ title: 'Error', description: error.response?.data?.message || 'Application failed', variant: 'destructive' });
     } finally {
@@ -137,6 +176,54 @@ const DrivingLicensePage: React.FC = () => {
                     <SelectContent>{rtoOffices.map((o) => <SelectItem key={o.id} value={o.id}>{o.name} - {o.city}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
+                
+                <div className="space-y-3 pt-2 border-t">
+                  <p className="text-sm font-medium">Upload Documents (Optional)</p>
+                  <p className="text-xs text-muted-foreground">You can upload documents now or later from your documents page</p>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="aadhaar" className="text-sm">Aadhaar Card</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="aadhaar"
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => setDocuments({ ...documents, aadhaar: e.target.files?.[0] || null })}
+                        className="bg-muted/50"
+                      />
+                      {documents.aadhaar && <CheckCircle2 className="h-4 w-4 text-success shrink-0" />}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="photo" className="text-sm">Passport Photo</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="photo"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setDocuments({ ...documents, photo: e.target.files?.[0] || null })}
+                        className="bg-muted/50"
+                      />
+                      {documents.photo && <CheckCircle2 className="h-4 w-4 text-success shrink-0" />}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="addressProof" className="text-sm">Address Proof</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="addressProof"
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => setDocuments({ ...documents, addressProof: e.target.files?.[0] || null })}
+                        className="bg-muted/50"
+                      />
+                      {documents.addressProof && <CheckCircle2 className="h-4 w-4 text-success shrink-0" />}
+                    </div>
+                  </div>
+                </div>
+                
                 <Button type="submit" className="btn-gradient w-full" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit Application'}
                 </Button>

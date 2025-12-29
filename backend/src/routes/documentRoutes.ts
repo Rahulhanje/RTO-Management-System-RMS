@@ -5,8 +5,10 @@ import { upload } from "../middlewares/uploadMiddleware";
 import {
   uploadDocument,
   getEntityDocuments,
+  getMyDocuments,
   verifyDocument,
   downloadDocument,
+  deleteDocument,
 } from "../controllers/documentController";
 
 const router = Router();
@@ -19,6 +21,9 @@ router.post(
   uploadDocument
 );
 
+// Get my documents (Authenticated users)
+router.get("/documents/my", authMiddleware, getMyDocuments);
+
 // Get documents for an entity (Authenticated users)
 router.get("/documents/entity/:entityId", authMiddleware, getEntityDocuments);
 
@@ -30,7 +35,10 @@ router.put(
   verifyDocument
 );
 
-// Download document (Authenticated users - validation logic typically needed to ensure checking user owns the doc or is admin)
+// Download document (Authenticated users)
 router.get("/documents/:id/download", authMiddleware, downloadDocument);
+
+// Delete document (Authenticated users)
+router.delete("/documents/:id", authMiddleware, deleteDocument);
 
 export default router;
