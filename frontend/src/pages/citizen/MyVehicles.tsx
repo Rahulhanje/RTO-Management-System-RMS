@@ -310,7 +310,7 @@ const MyVehicles: React.FC = () => {
 
       {/* View Vehicle Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="glass-card max-w-2xl">
+        <DialogContent className="glass-card max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Vehicle Details</DialogTitle>
           </DialogHeader>
