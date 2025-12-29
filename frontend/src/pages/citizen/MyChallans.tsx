@@ -434,7 +434,7 @@ const MyChallans: React.FC = () => {
                               <DialogTrigger asChild>
                                 <Button variant="outline" onClick={() => setSelectedChallan(challan)}>Dispute</Button>
                               </DialogTrigger>
-                              <DialogContent className="glass-card">
+                              <DialogContent className="glass-card max-h-[90vh] overflow-y-auto">
                                 <DialogHeader>
                                   <DialogTitle>Dispute Challan</DialogTitle>
                                 </DialogHeader>
@@ -477,7 +477,7 @@ const MyChallans: React.FC = () => {
 
       {/* Payment Dialog */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-        <DialogContent className="glass-card max-w-md">
+        <DialogContent className="glass-card max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {paymentStep === 'success' ? 'Payment Successful!' : 'Pay Challan'}
@@ -596,7 +596,7 @@ const MyChallans: React.FC = () => {
 
       {/* Payment Details Dialog */}
       <Dialog open={isPaymentDetailsOpen} onOpenChange={setIsPaymentDetailsOpen}>
-        <DialogContent className="glass-card max-w-2xl">
+        <DialogContent className="glass-card max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Payment Details</DialogTitle>
           </DialogHeader>
