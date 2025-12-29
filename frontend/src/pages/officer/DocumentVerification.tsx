@@ -46,8 +46,10 @@ const DocumentVerification: React.FC = () => {
       const dlData = (dlRes.data as any).applications || dlRes.data || [];
       const vehData = (vehRes.data as any).vehicles || vehRes.data || [];
       
-      const pendingDL = Array.isArray(dlData) ? dlData.filter((a: DLApplication) => !a.documents_verified && a.status === 'PENDING') : [];
-      const pendingVeh = Array.isArray(vehData) ? vehData.filter((v: Vehicle) => !v.verified && v.status === 'PENDING') : [];
+      // Filter applications that are PENDING (waiting for document verification)
+      // The backend uses status field, not a separate documents_verified boolean
+      const pendingDL = Array.isArray(dlData) ? dlData.filter((a: DLApplication) => a.status === 'PENDING') : [];
+      const pendingVeh = Array.isArray(vehData) ? vehData.filter((v: Vehicle) => v.status === 'PENDING') : [];
       
       setDlApplications(pendingDL);
       setVehicles(pendingVeh);
