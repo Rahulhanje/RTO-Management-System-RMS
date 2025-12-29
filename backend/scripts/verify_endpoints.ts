@@ -63,7 +63,7 @@ async function testDocumentUpload() {
     formData.append('entity_id', '00000000-0000-0000-0000-000000000001'); // Dummy UUID
     formData.append('document_type', 'AADHAAR');
 
-    const response = await axios.post(`${BASE_URL}/api/documents/upload`, formData, {
+    const response = await axios.post(`${BASE_URL}/documents/upload`, formData, {
       headers: {
         ...formData.getHeaders(),
         'Authorization': `Bearer ${authToken}`

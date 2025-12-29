@@ -62,3 +62,10 @@ export const verifyDocumentStatus = async (id: string, verifiedBy: string, statu
   const result = await pool.query(query, [status, verifiedBy, id]);
   return result.rows[0] || null;
 };
+
+// Get documents by user ID (all documents uploaded by a user)
+export const getDocumentsByUserId = async (userId: string): Promise<Document[]> => {
+  const query = `SELECT * FROM documents WHERE user_id = $1 ORDER BY created_at DESC`;
+  const result = await pool.query(query, [userId]);
+  return result.rows;
+};

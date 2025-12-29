@@ -8,9 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { dlService } from '@/services';
+import { dlService, documentService } from '@/services';
 import { DLApplication } from '@/types';
-import { CreditCard, Search, CheckCircle2, XCircle, Clock, Loader2, Calendar, FileCheck } from 'lucide-react';
+import type { Document } from '@/services/documentService';
+import { CreditCard, Search, CheckCircle2, XCircle, Clock, Loader2, Calendar, FileCheck, FileText, Eye, Download } from 'lucide-react';
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -36,6 +37,10 @@ const DLManagement: React.FC = () => {
   const [rejectReason, setRejectReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState<string | null>(null);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [isDocumentsDialogOpen, setIsDocumentsDialogOpen] = useState(false);
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
+  const [selectedAppForDocs, setSelectedAppForDocs] = useState<DLApplication | null>(null);
 
   useEffect(() => {
     fetchApplications();
@@ -126,6 +131,61 @@ const DLManagement: React.FC = () => {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const fetchDocumentsForApplication = async (application: DLApplication) => {
+    setIsLoadingDocuments(true);
+    setSelectedAppForDocs(application);
+    setIsDocumentsDialogOpen(true);
+    
+    try {
+      // First, try to get documents uploaded during DL application
+      const appDocsResponse = await documentService.getDocumentsByEntity(application.id);
+      let appDocs = appDocsResponse.success && appDocsResponse.data ? appDocsResponse.data.documents : [];
+      
+      // If no documents found for the application, fetch user's general documents as fallback
+      if (!appDocs || appDocs.length === 0) {
+        const userDocsResponse = await documentService.getDocumentsByEntity(application.user_id);
+        const userDocs = userDocsResponse.success && userDocsResponse.data ? userDocsResponse.data.documents : [];
+        
+        // Filter to only show relevant document types for DL
+        appDocs = userDocs.filter(doc => 
+          ['AADHAAR', 'PHOTO', 'ADDRESS_PROOF'].includes(doc.document_type)
+        );
+      }
+      
+      setDocuments(appDocs || []);
+    } catch (error: any) {
+      console.error('Error fetching documents:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load documents',
+        variant: 'destructive',
+      });
+      setDocuments([]);
+    } finally {
+      setIsLoadingDocuments(false);
+    }
+  };
+
+  const handleDownloadDocument = async (doc: Document) => {
+    try {
+      const blob = await documentService.downloadDocument(doc.id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = doc.file_name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: 'Failed to download document',
+        variant: 'destructive',
+      });
     }
   };
   
@@ -308,25 +368,30 @@ const DLManagement: React.FC = () => {
                   </td>
                   <td className="p-4">{getStatusBadge(app.status)}</td>
                   <td className="p-4 text-right">
-                    {((app.status === 'DOCUMENTS_VERIFIED' || app.status === 'VERIFIED') && !app.test_scheduled_at && !app.test_date) && (
-                      <Dialog open={scheduleDialogOpen === app.id} onOpenChange={(open) => setScheduleDialogOpen(open ? app.id : null)}>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm"><Calendar className="h-4 w-4 mr-2" />Schedule Test</Button>
-                        </DialogTrigger>
-                        <DialogContent className="glass-card">
-                          <DialogHeader><DialogTitle>Schedule Driving Test</DialogTitle></DialogHeader>
-                          <div className="space-y-4">
-                            <div className="space-y-2">
-                              <Label>Test Date & Time</Label>
-                              <Input type="datetime-local" value={testDate} onChange={(e) => setTestDate(e.target.value)} className="bg-muted/50" />
+                    <div className="flex gap-2 justify-end">
+                      <Button variant="outline" size="sm" onClick={() => fetchDocumentsForApplication(app)}>
+                        <FileText className="h-4 w-4 mr-2" />View Documents
+                      </Button>
+                      {((app.status === 'DOCUMENTS_VERIFIED' || app.status === 'VERIFIED') && !app.test_scheduled_at && !app.test_date) && (
+                        <Dialog open={scheduleDialogOpen === app.id} onOpenChange={(open) => setScheduleDialogOpen(open ? app.id : null)}>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm"><Calendar className="h-4 w-4 mr-2" />Schedule Test</Button>
+                          </DialogTrigger>
+                          <DialogContent className="glass-card">
+                            <DialogHeader><DialogTitle>Schedule Driving Test</DialogTitle></DialogHeader>
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <Label>Test Date & Time</Label>
+                                <Input type="datetime-local" value={testDate} onChange={(e) => setTestDate(e.target.value)} className="bg-muted/50" />
+                              </div>
+                              <Button className="btn-gradient w-full" onClick={() => handleScheduleTest(app.id)} disabled={isSubmitting || !testDate}>
+                                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Schedule Test'}
+                              </Button>
                             </div>
-                            <Button className="btn-gradient w-full" onClick={() => handleScheduleTest(app.id)} disabled={isSubmitting || !testDate}>
-                              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Schedule Test'}
-                            </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    )}
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -334,6 +399,72 @@ const DLManagement: React.FC = () => {
           </table>
         </div>
       </Card>
+
+      {/* Documents Dialog */}
+      <Dialog open={isDocumentsDialogOpen} onOpenChange={setIsDocumentsDialogOpen}>
+        <DialogContent className="glass-card max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Application Documents</DialogTitle>
+          </DialogHeader>
+          {isLoadingDocuments ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : documents.length === 0 ? (
+            <div className="py-12 text-center">
+              <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Documents Uploaded</h3>
+              <p className="text-muted-foreground">
+                The applicant hasn't uploaded any documents yet.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg bg-muted/50">
+                <p className="text-sm font-medium">Application ID: {selectedAppForDocs?.id.slice(0, 8)}...</p>
+                <p className="text-sm text-muted-foreground">License Type: {selectedAppForDocs?.license_type}</p>
+              </div>
+              <div className="grid gap-4">
+                {documents.map((doc) => (
+                  <Card key={doc.id} className="glass-card-hover">
+                    <CardContent className="pt-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-4 flex-1">
+                          <div className={`h-12 w-12 rounded-lg flex items-center justify-center shrink-0 ${
+                            doc.status === 'VERIFIED' ? 'bg-success/20 text-success' : 
+                            doc.status === 'REJECTED' ? 'bg-destructive/20 text-destructive' : 
+                            'bg-warning/20 text-warning'
+                          }`}>
+                            <FileText className="h-6 w-6" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-semibold">{doc.document_type.replace('_', ' ')}</p>
+                              {doc.status === 'VERIFIED' && <Badge className="badge-success"><CheckCircle2 className="h-3 w-3 mr-1" />Verified</Badge>}
+                              {doc.status === 'PENDING' && <Badge className="badge-warning"><Clock className="h-3 w-3 mr-1" />Pending</Badge>}
+                              {doc.status === 'REJECTED' && <Badge className="badge-error"><XCircle className="h-3 w-3 mr-1" />Rejected</Badge>}
+                            </div>
+                            <p className="text-sm text-muted-foreground truncate">{doc.file_name}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Uploaded: {new Date(doc.created_at).toLocaleDateString()}
+                              {doc.entity_type === 'USER' && <span className="ml-2 text-primary">(From My Documents)</span>}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <Button variant="outline" size="sm" onClick={() => handleDownloadDocument(doc)}>
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

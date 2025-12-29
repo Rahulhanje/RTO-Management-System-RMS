@@ -14,6 +14,12 @@ export const notificationService = {
     return response.data;
   },
 
+  // Mark all notifications as read
+  markAllAsRead: async (): Promise<ApiResponse<void>> => {
+    const response = await api.put('/notifications/mark-all-read');
+    return response.data;
+  },
+
   // Send notification (admin)
   sendNotification: async (userId: string, message: string): Promise<ApiResponse<Notification>> => {
     const response = await api.post('/notifications/send', {

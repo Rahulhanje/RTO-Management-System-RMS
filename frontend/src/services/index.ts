@@ -8,4 +8,5 @@ export { appointmentService } from './appointmentService';
 export { notificationService } from './notificationService';
 export { rtoService } from './rtoService';
 export { analyticsService } from './analyticsService';
+export { documentService, type Document } from './documentService';
 export { default as api } from './api';

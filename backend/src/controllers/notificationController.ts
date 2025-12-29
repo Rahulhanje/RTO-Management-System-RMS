@@ -4,6 +4,7 @@ import {
   createNotification,
   getNotificationsByUser,
   markNotificationAsRead,
+  markAllNotificationsAsRead,
 } from "../models/notificationModel";
 
 // Get all notifications for the logged-in user
@@ -43,6 +44,24 @@ export const markAsRead = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error("Error marking notification as read:", error);
     res.status(500).json({ success: false, message: "Failed to mark notification as read" });
+  }
+};
+
+// Mark all notifications as read
+export const markAllAsRead = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "User not authenticated" });
+    }
+
+    const count = await markAllNotificationsAsRead(userId);
+
+    res.json({ success: true, message: `${count} notification(s) marked as read` });
+  } catch (error) {
+    console.error("Error marking all notifications as read:", error);
+    res.status(500).json({ success: false, message: "Failed to mark all notifications as read" });
   }
 };
 

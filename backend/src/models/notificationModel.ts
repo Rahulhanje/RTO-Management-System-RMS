@@ -43,3 +43,14 @@ export const markNotificationAsRead = async (
   );
   return result.rows[0] || null;
 };
+
+// Mark all notifications as read for a user
+export const markAllNotificationsAsRead = async (
+  userId: string
+): Promise<number> => {
+  const result = await pool.query(
+    "UPDATE notifications SET is_read = TRUE WHERE user_id = $1 AND is_read = FALSE",
+    [userId]
+  );
+  return result.rowCount || 0;
+};

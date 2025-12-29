@@ -9,9 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { dlService, vehicleService } from '@/services';
+import { dlService, vehicleService, documentService, type Document } from '@/services';
 import { DLApplication, Vehicle } from '@/types';
-import { Search, FileCheck, CheckCircle2, XCircle, Clock, AlertTriangle, Loader2, Eye } from 'lucide-react';
+import { Search, FileCheck, CheckCircle2, XCircle, Clock, AlertTriangle, Loader2, Eye, FileText, Download } from 'lucide-react';
 
 const getStatusBadge = (status: string) => {
   if (status.includes('VERIFIED') || status === 'APPROVED') return <Badge className="badge-success"><CheckCircle2 className="h-3 w-3 mr-1" />Verified</Badge>;
@@ -28,6 +28,9 @@ const DocumentVerification: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [verifyNotes, setVerifyNotes] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  const [vehicleDocuments, setVehicleDocuments] = useState<Document[]>([]);
+  const [dlDocuments, setDlDocuments] = useState<Document[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -76,6 +79,47 @@ const DocumentVerification: React.FC = () => {
     }
   };
 
+  const fetchVehicleDocuments = async (vehicleId: string) => {
+    setLoadingDocs(true);
+    try {
+      const response = await documentService.getDocumentsByEntity(vehicleId);
+      if (response.success && response.data) {
+        setVehicleDocuments(response.data.documents || []);
+      }
+    } catch (error: any) {
+      console.error('Error fetching vehicle documents:', error);
+      setVehicleDocuments([]);
+    } finally {
+      setLoadingDocs(false);
+    }
+  };
+
+  const fetchDlDocuments = async (applicationId: string) => {
+    setLoadingDocs(true);
+    try {
+      const response = await documentService.getDocumentsByEntity(applicationId);
+      if (response.success && response.data) {
+        setDlDocuments(response.data.documents || []);
+      }
+    } catch (error: any) {
+      console.error('Error fetching DL documents:', error);
+      setDlDocuments([]);
+    } finally {
+      setLoadingDocs(false);
+    }
+  };
+
+  const handleViewDocument = async (doc: Document) => {
+    try {
+      const blob = await documentService.downloadDocument(doc.id);
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (error: any) {
+      console.error('Error viewing document:', error);
+      toast({ title: 'Error', description: 'Failed to open document', variant: 'destructive' });
+    }
+  };
+
   if (isLoading) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
@@ -119,7 +163,7 @@ const DocumentVerification: React.FC = () => {
                         {getStatusBadge(app.status)}
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button variant="outline" onClick={() => setSelectedItem({ type: 'dl', ...app })}><Eye className="h-4 w-4 mr-2" />Review</Button>
+                            <Button variant="outline" onClick={() => { setSelectedItem({ type: 'dl', ...app }); fetchDlDocuments(app.id); }}><Eye className="h-4 w-4 mr-2" />Review</Button>
                           </DialogTrigger>
                           <DialogContent className="glass-card">
                             <DialogHeader><DialogTitle>Verify DL Application</DialogTitle></DialogHeader>
@@ -129,13 +173,31 @@ const DocumentVerification: React.FC = () => {
                                 <p className="font-semibold">{app.license_type}</p>
                               </div>
                               <div className="p-4 rounded-xl bg-muted/50">
-                                <p className="text-sm text-muted-foreground mb-2">Documents to Verify</p>
-                                <ul className="text-sm space-y-1">
-                                  <li>✓ Aadhaar Card</li>
-                                  <li>✓ Address Proof</li>
-                                  <li>✓ Passport Photo</li>
-                                  <li>✓ Medical Certificate</li>
-                                </ul>
+                                <p className="text-sm text-muted-foreground mb-2">Uploaded Documents</p>
+                                {loadingDocs ? (
+                                  <div className="flex items-center justify-center py-4">
+                                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                                  </div>
+                                ) : dlDocuments.length === 0 ? (
+                                  <p className="text-sm text-muted-foreground">No documents uploaded yet</p>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {dlDocuments.map((doc) => (
+                                      <div key={doc.id} className="flex items-center justify-between p-2 rounded-lg bg-background/50">
+                                        <div className="flex items-center gap-2">
+                                          <FileText className="h-4 w-4 text-muted-foreground" />
+                                          <div>
+                                            <p className="text-sm font-medium">{doc.document_type.replace('_', ' ')}</p>
+                                            <p className="text-xs text-muted-foreground">{doc.file_name}</p>
+                                          </div>
+                                        </div>
+                                        <Button size="sm" variant="ghost" onClick={() => handleViewDocument(doc)}>
+                                          <Eye className="h-3 w-3 mr-1" />View
+                                        </Button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                               <div className="space-y-2">
                                 <Label>Verification Notes</Label>
@@ -179,7 +241,7 @@ const DocumentVerification: React.FC = () => {
                         {getStatusBadge(vehicle.status)}
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button variant="outline"><Eye className="h-4 w-4 mr-2" />Review</Button>
+                            <Button variant="outline" onClick={() => fetchVehicleDocuments(vehicle.id)}><Eye className="h-4 w-4 mr-2" />Review</Button>
                           </DialogTrigger>
                           <DialogContent className="glass-card">
                             <DialogHeader><DialogTitle>Verify Vehicle Documents</DialogTitle></DialogHeader>
@@ -193,13 +255,31 @@ const DocumentVerification: React.FC = () => {
                                 <div><span className="text-muted-foreground">Chassis No:</span><p className="font-mono">{vehicle.chassis_number}</p></div>
                               </div>
                               <div className="p-4 rounded-xl bg-muted/50">
-                                <p className="text-sm text-muted-foreground mb-2">Documents to Verify</p>
-                                <ul className="text-sm space-y-1">
-                                  <li>✓ Invoice / Sale Deed</li>
-                                  <li>✓ Insurance Certificate</li>
-                                  <li>✓ PUC Certificate</li>
-                                  <li>✓ Owner ID Proof</li>
-                                </ul>
+                                <p className="text-sm text-muted-foreground mb-2">Uploaded Documents</p>
+                                {loadingDocs ? (
+                                  <div className="flex items-center justify-center py-4">
+                                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                                  </div>
+                                ) : vehicleDocuments.length === 0 ? (
+                                  <p className="text-sm text-muted-foreground">No documents uploaded yet</p>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {vehicleDocuments.map((doc) => (
+                                      <div key={doc.id} className="flex items-center justify-between p-2 rounded-lg bg-background/50">
+                                        <div className="flex items-center gap-2">
+                                          <FileText className="h-4 w-4 text-muted-foreground" />
+                                          <div>
+                                            <p className="text-sm font-medium">{doc.document_type.replace('_', ' ')}</p>
+                                            <p className="text-xs text-muted-foreground">{doc.file_name}</p>
+                                          </div>
+                                        </div>
+                                        <Button size="sm" variant="ghost" onClick={() => handleViewDocument(doc)}>
+                                          <Eye className="h-3 w-3 mr-1" />View
+                                        </Button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                               <div className="space-y-2">
                                 <Label>Verification Notes</Label>

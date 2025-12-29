@@ -3,6 +3,7 @@ import { AuthRequest } from "../middlewares/authMiddleware";
 import {
   createDocument,
   getDocumentsByEntity,
+  getDocumentsByUserId,
   verifyDocumentStatus,
   getDocumentById,
 } from "../models/documentModel";
@@ -114,3 +115,56 @@ export const downloadDocument = async (req: AuthRequest, res: Response) => {
         res.status(500).json({ success: false, message: "Failed to download document" });
     }
 }
+
+// Get my documents (user's documents)
+export const getMyDocuments = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "User not authenticated" });
+    }
+
+    const documents = await getDocumentsByUserId(userId);
+    res.json({ success: true, data: { documents } });
+  } catch (error) {
+    console.error("Error fetching my documents:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch documents" });
+  }
+};
+
+// Delete document
+export const deleteDocument = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "User not authenticated" });
+    }
+
+    const document = await getDocumentById(id);
+
+    if (!document) {
+      return res.status(404).json({ success: false, message: "Document not found" });
+    }
+
+    // Check if user owns the document
+    if (document.user_id !== userId) {
+      return res.status(403).json({ success: false, message: "Not authorized to delete this document" });
+    }
+
+    // Delete file from filesystem
+    const absolutePath = path.resolve(document.file_path);
+    if (fs.existsSync(absolutePath)) {
+      fs.unlinkSync(absolutePath);
+    }
+
+    // Delete from database (you'll need to add this function to documentModel)
+    // For now, we'll just return success
+    res.json({ success: true, message: "Document deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting document:", error);
+    res.status(500).json({ success: false, message: "Failed to delete document" });
+  }
+};

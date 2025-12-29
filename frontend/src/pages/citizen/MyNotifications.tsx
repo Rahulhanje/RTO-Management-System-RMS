@@ -29,7 +29,7 @@ const MyNotifications: React.FC = () => {
   const handleMarkAsRead = async (id: string) => {
     try {
       await notificationService.markAsRead(id);
-      setLocalNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+      setLocalNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
       refetch(); // Refetch to update badge counts
     } catch (error) {
       console.error('Failed to mark as read');
@@ -37,12 +37,17 @@ const MyNotifications: React.FC = () => {
   };
 
   const handleMarkAllAsRead = async () => {
-    const unreadNotifications = localNotifications.filter(n => !n.read);
-    await Promise.all(unreadNotifications.map(n => handleMarkAsRead(n.id)));
-    toast({ title: 'Success', description: 'All notifications marked as read' });
+    try {
+      await notificationService.markAllAsRead();
+      toast({ title: 'Success', description: 'All notifications marked as read' });
+      refetch(); // Refetch to update the list
+    } catch (error: any) {
+      console.error('Failed to mark all as read:', error);
+      toast({ title: 'Error', description: 'Failed to mark all as read', variant: 'destructive' });
+    }
   };
 
-  const unreadCount = localNotifications.filter(n => !n.read).length;
+  const unreadCount = localNotifications.filter(n => !n.is_read).length;
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -76,17 +81,17 @@ const MyNotifications: React.FC = () => {
             const IconComponent = getNotificationIcon(notification.message);
             return (
               <motion.div key={notification.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-                <Card className={`glass-card-hover cursor-pointer transition-all ${!notification.read ? 'border-primary/30 bg-primary/5' : ''}`} onClick={() => !notification.read && handleMarkAsRead(notification.id)}>
+                <Card className={`glass-card-hover cursor-pointer transition-all ${!notification.is_read ? 'border-primary/30 bg-primary/5' : ''}`} onClick={() => !notification.is_read && handleMarkAsRead(notification.id)}>
                   <CardContent className="py-4">
                     <div className="flex items-start gap-4">
-                      <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${!notification.read ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${!notification.is_read ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
                         <IconComponent className="h-5 w-5" />
                       </div>
                       <div className="flex-1">
-                        <p className={`${!notification.read ? 'font-medium' : 'text-muted-foreground'}`}>{notification.message}</p>
+                        <p className={`${!notification.is_read ? 'font-medium' : 'text-muted-foreground'}`}>{notification.message}</p>
                         <p className="text-sm text-muted-foreground mt-1">{new Date(notification.created_at).toLocaleString()}</p>
                       </div>
-                      {!notification.read && <div className="h-2 w-2 rounded-full bg-primary shrink-0 mt-2" />}
+                      {!notification.is_read && <div className="h-2 w-2 rounded-full bg-primary shrink-0 mt-2" />}
                     </div>
                   </CardContent>
                 </Card>
