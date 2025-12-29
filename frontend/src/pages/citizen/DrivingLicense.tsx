@@ -36,12 +36,13 @@ const getStatusBadge = (status: string) => {
 const DrivingLicensePage: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [license, setLicense] = useState<DrivingLicense | null>(null);
+  const [licenses, setLicenses] = useState<DrivingLicense[]>([]);
   const [applications, setApplications] = useState<DLApplication[]>([]);
   const [rtoOffices, setRtoOffices] = useState<RTOOffice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedLicense, setSelectedLicense] = useState<DrivingLicense | null>(null);
   const [digitalDLOpen, setDigitalDLOpen] = useState(false);
   const [formData, setFormData] = useState({ rto_office_id: '', license_type: '' as LicenseType });
   const [documents, setDocuments] = useState<{
@@ -62,10 +63,11 @@ const DrivingLicensePage: React.FC = () => {
         rtoService.listOffices().catch(() => ({ success: false, data: [] })),
       ]);
       
-      // Extract license from nested response
+      // Extract licenses from nested response (supports both single and multiple)
       if (licenseRes.success && licenseRes.data) {
-        const licenseData = (licenseRes.data as any).license || licenseRes.data;
-        setLicense(licenseData);
+        const licensesData = (licenseRes.data as any).licenses || [(licenseRes.data as any).license] || [];
+        const validLicenses = licensesData.filter((l: any) => l != null);
+        setLicenses(validLicenses);
       }
       
       // Extract applications array from nested response
@@ -152,11 +154,10 @@ const DrivingLicensePage: React.FC = () => {
           <h1 className="text-2xl font-bold">Driving License</h1>
           <p className="text-muted-foreground">Manage your driving license</p>
         </div>
-        {!license && (
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="btn-gradient"><Plus className="h-4 w-4 mr-2" />Apply for DL</Button>
-            </DialogTrigger>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="btn-gradient"><Plus className="h-4 w-4 mr-2" />{licenses.length > 0 ? 'Apply for New Category' : 'Apply for DL'}</Button>
+          </DialogTrigger>
             <DialogContent className="glass-card">
               <DialogHeader>
                 <DialogTitle>Apply for Driving License</DialogTitle>
@@ -230,205 +231,215 @@ const DrivingLicensePage: React.FC = () => {
               </form>
             </DialogContent>
           </Dialog>
-        )}
       </div>
 
-      {/* Active License Card */}
-      {license && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <Card className="glass-card overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-primary via-secondary to-accent" />
-            <CardContent className="pt-8">
-              <div className="flex flex-col md:flex-row gap-6">
-                <div className="h-32 w-32 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shrink-0">
-                  <CreditCard className="h-16 w-16 text-primary-foreground" />
-                </div>
-                <div className="flex-1 space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Driving License Number</p>
-                      <p className="text-2xl font-bold gradient-text">{license.dl_number}</p>
-                    </div>
-                    {getStatusBadge(license.status)}
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div><span className="text-muted-foreground">License Type</span><p className="font-medium">{license.license_type}</p></div>
-                    <div><span className="text-muted-foreground">Issue Date</span><p className="font-medium">{new Date(license.issue_date).toLocaleDateString()}</p></div>
-                    <div><span className="text-muted-foreground">Expiry Date</span><p className="font-medium">{new Date(license.expiry_date).toLocaleDateString()}</p></div>
-                    <div><span className="text-muted-foreground">RTO</span><p className="font-medium">{rtoOffices.find(o => o.id === license.rto_office_id)?.name || license.rto_office_id.slice(0, 8)}</p></div>
-                  </div>
-                  <div className="flex gap-3 pt-2">
-                    <Dialog open={digitalDLOpen} onOpenChange={setDigitalDLOpen}>
-                      <DialogTrigger asChild>
-                        <Button variant="outline"><QrCode className="h-4 w-4 mr-2" />View Digital DL</Button>
-                      </DialogTrigger>
-                      <DialogContent className="glass-card max-w-lg max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Digital Driving License</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          {/* Digital DL Card */}
-                          <div className="relative bg-gradient-to-br from-primary via-secondary to-accent p-4 sm:p-6 rounded-xl sm:rounded-2xl text-white overflow-hidden">
-                            <div className="absolute top-0 right-0 opacity-10">
-                              <CreditCard className="h-24 w-24 sm:h-32 sm:w-32" />
+      {/* Active License Cards */}
+      {licenses.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">My Driving Licenses ({licenses.length})</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {licenses.map((license, index) => (
+              <motion.div key={license.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
+                <Card className="glass-card overflow-hidden h-full">
+                  <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-primary via-secondary to-accent" />
+                  <CardContent className="pt-8">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-start gap-4">
+                        <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shrink-0">
+                          <CreditCard className="h-8 w-8 text-primary-foreground" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <p className="text-xs text-muted-foreground">License Number</p>
+                              <p className="text-lg font-bold gradient-text">{license.dl_number}</p>
                             </div>
-                            <div className="relative space-y-3 sm:space-y-4">
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <p className="text-xs opacity-80">DRIVING LICENSE</p>
-                                  <p className="text-lg sm:text-2xl font-bold tracking-wider break-all">{license.dl_number}</p>
-                                </div>
-                                <div className="h-12 w-12 sm:h-16 sm:w-16 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center shrink-0 ml-2">
-                                  <QrCode className="h-8 w-8 sm:h-12 sm:w-12" />
-                                </div>
-                              </div>
-                              
-                              <div className="grid grid-cols-2 gap-3 sm:gap-4 pt-2 sm:pt-4">
-                                <div>
-                                  <p className="text-xs opacity-80">Holder Name</p>
-                                  <p className="font-semibold text-sm sm:text-base truncate">{user?.name || 'N/A'}</p>
-                                </div>
-                                <div>
-                                  <p className="text-xs opacity-80">License Type</p>
-                                  <p className="font-semibold text-sm sm:text-base">{license.license_type}</p>
-                                </div>
-                                <div>
-                                  <p className="text-xs opacity-80">Issue Date</p>
-                                  <p className="font-semibold text-sm sm:text-base">{new Date(license.issue_date).toLocaleDateString()}</p>
-                                </div>
-                                <div>
-                                  <p className="text-xs opacity-80">Valid Until</p>
-                                  <p className="font-semibold text-sm sm:text-base">{new Date(license.expiry_date).toLocaleDateString()}</p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Personal Details */}
-                          <Card className="glass-card">
-                            <CardContent className="pt-4 sm:pt-6 space-y-3 sm:space-y-4">
-                              <h3 className="font-semibold text-sm sm:text-base flex items-center gap-2">
-                                <UserIcon className="h-4 w-4" />
-                                Personal Information
-                              </h3>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
-                                <div>
-                                  <p className="text-muted-foreground text-xs">Full Name</p>
-                                  <p className="font-medium">{user?.name || 'N/A'}</p>
-                                </div>
-                                <div>
-                                  <p className="text-muted-foreground text-xs">Date of Birth</p>
-                                  <p className="font-medium">{user?.date_of_birth ? new Date(user.date_of_birth).toLocaleDateString() : 'N/A'}</p>
-                                </div>
-                                <div>
-                                  <p className="text-muted-foreground text-xs">Phone Number</p>
-                                  <p className="font-medium flex items-center gap-1">
-                                    <Phone className="h-3 w-3" />{user?.phone || 'N/A'}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-muted-foreground text-xs">Email</p>
-                                  <p className="font-medium flex items-center gap-1 break-all">
-                                    <Mail className="h-3 w-3 shrink-0" /><span className="truncate">{user?.email || 'N/A'}</span>
-                                  </p>
-                                </div>
-                                <div className="sm:col-span-2">
-                                  <p className="text-muted-foreground text-xs">Address</p>
-                                  <p className="font-medium flex items-start gap-1">
-                                    <MapPin className="h-3 w-3 mt-1 shrink-0" /><span>{user?.address || 'N/A'}</span>
-                                  </p>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-
-                          {/* License Details */}
-                          <Card className="glass-card">
-                            <CardContent className="pt-4 sm:pt-6 space-y-3 sm:space-y-4">
-                              <h3 className="font-semibold text-sm sm:text-base flex items-center gap-2">
-                                <CreditCard className="h-4 w-4" />
-                                License Details
-                              </h3>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
-                                <div>
-                                  <p className="text-muted-foreground text-xs">License Number</p>
-                                  <p className="font-medium font-mono text-xs sm:text-sm break-all">{license.dl_number}</p>
-                                </div>
-                                <div>
-                                  <p className="text-muted-foreground text-xs">License Type</p>
-                                  <p className="font-medium text-xs sm:text-sm">{license.license_type} - {licenseTypeLabels[license.license_type as LicenseType]}</p>
-                                </div>
-                                <div>
-                                  <p className="text-muted-foreground text-xs">Issue Date</p>
-                                  <p className="font-medium">{new Date(license.issue_date).toLocaleDateString()}</p>
-                                </div>
-                                <div>
-                                  <p className="text-muted-foreground text-xs">Expiry Date</p>
-                                  <p className="font-medium">{new Date(license.expiry_date).toLocaleDateString()}</p>
-                                </div>
-                                <div>
-                                  <p className="text-muted-foreground text-xs">Status</p>
-                                  <div>{getStatusBadge(license.status)}</div>
-                                </div>
-                                <div>
-                                  <p className="text-muted-foreground text-xs">RTO Office</p>
-                                  <p className="font-medium">{rtoOffices.find(o => o.id === license.rto_office_id)?.name || 'N/A'}</p>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-
-                          {/* QR Code and Digital Signature */}
-                          {(license.qr_code_data || license.digital_signature) && (
-                            <Card className="glass-card">
-                              <CardContent className="pt-4 sm:pt-6 space-y-3 sm:space-y-4">
-                                <h3 className="font-semibold text-sm sm:text-base flex items-center gap-2">
-                                  <QrCode className="h-4 w-4" />
-                                  Verification
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  {license.qr_code_data && (
-                                    <div className="space-y-2">
-                                      <p className="text-muted-foreground text-xs">QR Code</p>
-                                      <div className="bg-white p-4 rounded-lg inline-block">
-                                        <img 
-                                          src={license.qr_code_data} 
-                                          alt="License QR Code" 
-                                          className="w-40 h-40"
-                                        />
-                                      </div>
-                                      <p className="text-xs text-muted-foreground">Scan to verify license</p>
-                                    </div>
-                                  )}
-                                  {license.digital_signature && (
-                                    <div className="space-y-2">
-                                      <p className="text-muted-foreground text-xs">Digital Signature</p>
-                                      <div className="bg-muted/50 p-3 rounded-lg">
-                                        <p className="font-mono text-xs break-all">{license.digital_signature}</p>
-                                      </div>
-                                      <p className="text-xs text-muted-foreground">Cryptographic signature</p>
-                                    </div>
-                                  )}
-                                </div>
-                              </CardContent>
-                            </Card>
-                          )}
-
-                          <div className="text-center text-xs text-muted-foreground px-2">
-                            <p>This is a digitally verified driving license issued by RTO Portal</p>
-                            <p className="mt-1">Valid across India • Keep this safe</p>
+                            {getStatusBadge(license.status)}
                           </div>
                         </div>
-                      </DialogContent>
-                    </Dialog>
-                    <Button variant="outline"><RefreshCw className="h-4 w-4 mr-2" />Renew License</Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div><span className="text-muted-foreground text-xs">License Type</span><p className="font-medium">{license.license_type}</p></div>
+                        <div><span className="text-muted-foreground text-xs">Issue Date</span><p className="font-medium">{new Date(license.issue_date).toLocaleDateString()}</p></div>
+                        <div><span className="text-muted-foreground text-xs">Expiry Date</span><p className="font-medium">{new Date(license.expiry_date).toLocaleDateString()}</p></div>
+                        <div><span className="text-muted-foreground text-xs">RTO</span><p className="font-medium">{rtoOffices.find(o => o.id === license.rto_office_id)?.name || license.rto_office_id?.slice(0, 8)}</p></div>
+                      </div>
+                      <div className="flex gap-2 pt-2">
+                        <Button variant="outline" size="sm" className="flex-1" onClick={() => { setSelectedLicense(license); setDigitalDLOpen(true); }}><QrCode className="h-4 w-4 mr-1" />View Digital DL</Button>
+                        <Button variant="outline" size="sm" className="flex-1"><RefreshCw className="h-4 w-4 mr-1" />Renew</Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Digital DL Dialog */}
+      <Dialog open={digitalDLOpen} onOpenChange={setDigitalDLOpen}>
+        <DialogContent className="glass-card max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Digital Driving License</DialogTitle>
+          </DialogHeader>
+          {selectedLicense && (
+            <div className="space-y-4">
+              {/* Digital DL Card */}
+              <div className="relative bg-gradient-to-br from-primary via-secondary to-accent p-4 sm:p-6 rounded-xl sm:rounded-2xl text-white overflow-hidden">
+                <div className="absolute top-0 right-0 opacity-10">
+                  <CreditCard className="h-24 w-24 sm:h-32 sm:w-32" />
+                </div>
+                <div className="relative space-y-3 sm:space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-xs opacity-80">DRIVING LICENSE</p>
+                      <p className="text-lg sm:text-2xl font-bold tracking-wider break-all">{selectedLicense.dl_number}</p>
+                    </div>
+                    <div className="h-12 w-12 sm:h-16 sm:w-16 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center shrink-0 ml-2">
+                      <QrCode className="h-8 w-8 sm:h-12 sm:w-12" />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4 pt-2 sm:pt-4">
+                    <div>
+                      <p className="text-xs opacity-80">Holder Name</p>
+                      <p className="font-semibold text-sm sm:text-base truncate">{user?.name || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs opacity-80">License Type</p>
+                      <p className="font-semibold text-sm sm:text-base">{selectedLicense.license_type}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs opacity-80">Issue Date</p>
+                      <p className="font-semibold text-sm sm:text-base">{new Date(selectedLicense.issue_date).toLocaleDateString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs opacity-80">Valid Until</p>
+                      <p className="font-semibold text-sm sm:text-base">{new Date(selectedLicense.expiry_date).toLocaleDateString()}</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
+
+              {/* Personal Details */}
+              <Card className="glass-card">
+                <CardContent className="pt-4 sm:pt-6 space-y-3 sm:space-y-4">
+                  <h3 className="font-semibold text-sm sm:text-base flex items-center gap-2">
+                    <UserIcon className="h-4 w-4" />
+                    Personal Information
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground text-xs">Full Name</p>
+                      <p className="font-medium">{user?.name || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Date of Birth</p>
+                      <p className="font-medium">{user?.date_of_birth ? new Date(user.date_of_birth).toLocaleDateString() : 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Phone Number</p>
+                      <p className="font-medium flex items-center gap-1">
+                        <Phone className="h-3 w-3" />{user?.phone || 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Email</p>
+                      <p className="font-medium flex items-center gap-1 break-all">
+                        <Mail className="h-3 w-3 shrink-0" /><span className="truncate">{user?.email || 'N/A'}</span>
+                      </p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <p className="text-muted-foreground text-xs">Address</p>
+                      <p className="font-medium flex items-start gap-1">
+                        <MapPin className="h-3 w-3 mt-1 shrink-0" /><span>{user?.address || 'N/A'}</span>
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* License Details */}
+              <Card className="glass-card">
+                <CardContent className="pt-4 sm:pt-6 space-y-3 sm:space-y-4">
+                  <h3 className="font-semibold text-sm sm:text-base flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    License Details
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground text-xs">License Number</p>
+                      <p className="font-medium font-mono text-xs sm:text-sm break-all">{selectedLicense.dl_number}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">License Type</p>
+                      <p className="font-medium text-xs sm:text-sm">{selectedLicense.license_type} - {licenseTypeLabels[selectedLicense.license_type as LicenseType]}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Issue Date</p>
+                      <p className="font-medium">{new Date(selectedLicense.issue_date).toLocaleDateString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Expiry Date</p>
+                      <p className="font-medium">{new Date(selectedLicense.expiry_date).toLocaleDateString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Status</p>
+                      <div>{getStatusBadge(selectedLicense.status)}</div>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">RTO Office</p>
+                      <p className="font-medium">{rtoOffices.find(o => o.id === selectedLicense.rto_office_id)?.name || 'N/A'}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* QR Code and Digital Signature */}
+              {(selectedLicense.qr_code_data || selectedLicense.digital_signature) && (
+                <Card className="glass-card">
+                  <CardContent className="pt-4 sm:pt-6 space-y-3 sm:space-y-4">
+                    <h3 className="font-semibold text-sm sm:text-base flex items-center gap-2">
+                      <QrCode className="h-4 w-4" />
+                      Verification
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {selectedLicense.qr_code_data && (
+                        <div className="space-y-2">
+                          <p className="text-muted-foreground text-xs">QR Code</p>
+                          <div className="bg-white p-4 rounded-lg inline-block">
+                            <img 
+                              src={selectedLicense.qr_code_data} 
+                              alt="License QR Code" 
+                              className="w-40 h-40"
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground">Scan to verify license</p>
+                        </div>
+                      )}
+                      {selectedLicense.digital_signature && (
+                        <div className="space-y-2">
+                          <p className="text-muted-foreground text-xs">Digital Signature</p>
+                          <div className="bg-muted/50 p-3 rounded-lg">
+                            <p className="font-mono text-xs break-all">{selectedLicense.digital_signature}</p>
+                          </div>
+                          <p className="text-xs text-muted-foreground">Cryptographic signature</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <div className="text-center text-xs text-muted-foreground px-2">
+                <p>This is a digitally verified driving license issued by RTO Portal</p>
+                <p className="mt-1">Valid across India • Keep this safe</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Applications */}
       {applications.length > 0 && (
@@ -476,7 +487,7 @@ const DrivingLicensePage: React.FC = () => {
         </div>
       )}
 
-      {!license && applications.length === 0 && (
+      {licenses.length === 0 && applications.length === 0 && (
         <Card className="glass-card">
           <CardContent className="py-16 text-center">
             <CreditCard className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
