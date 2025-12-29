@@ -223,6 +223,13 @@ npm run dev
 
 ---
 
+## 📝 Developer Notes 
+
+- Ensure PostgreSQL service is running before starting the backend server.
+- Double-check `.env` variables to avoid database connection issues.
+- Run backend and frontend in separate terminals during development.
+- Use Node.js version 18 or above for best compatibility.
+
 ## 📁 Project Structure
 
 ```
