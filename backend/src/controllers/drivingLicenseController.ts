@@ -4,7 +4,9 @@ import { getDlApplicationById, approveDlApplication, rejectDlApplication } from 
 import {
   createDrivingLicense,
   getDrivingLicenseByUserId,
+  getDrivingLicenseByUserIdAndType,
   getDrivingLicenseByNumber,
+  getAllDrivingLicensesByUserId,
   renewDrivingLicense,
   updateLicenseQrAndSignature,
 } from "../models/drivingLicenseModel";
@@ -33,9 +35,10 @@ export const approveApplication = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ success: false, message: "Application must pass the test first" });
     }
 
-    const existingLicense = await getDrivingLicenseByUserId(application.user_id);
+    // Check if user already has a license of the SAME TYPE
+    const existingLicense = await getDrivingLicenseByUserIdAndType(application.user_id, application.license_type);
     if (existingLicense) {
-      return res.status(400).json({ success: false, message: "User already has an active driving license" });
+      return res.status(400).json({ success: false, message: `User already has an active ${application.license_type} driving license` });
     }
 
     await approveDlApplication(id, adminId);
@@ -153,13 +156,14 @@ export const getMyDl = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ success: false, message: "User not authenticated" });
     }
 
-    const license = await getDrivingLicenseByUserId(userId);
+    const licenses = await getAllDrivingLicensesByUserId(userId);
 
-    if (!license) {
+    if (!licenses || licenses.length === 0) {
       return res.status(404).json({ success: false, message: "No driving license found" });
     }
 
-    res.json({ success: true, data: { license } });
+    // Return all licenses, with backward compatibility (license field for first one)
+    res.json({ success: true, data: { license: licenses[0], licenses } });
   } catch (error) {
     console.error("Error fetching DL:", error);
     res.status(500).json({ success: false, message: "Failed to fetch driving license" });

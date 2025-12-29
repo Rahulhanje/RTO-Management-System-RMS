@@ -50,6 +50,20 @@ export const getDrivingLicenseByUserId = async (user_id: string): Promise<Drivin
   return result.rows[0] || null;
 };
 
+// Get all driving licenses for a user
+export const getAllDrivingLicensesByUserId = async (user_id: string): Promise<DrivingLicense[]> => {
+  const query = `SELECT * FROM driving_licenses WHERE user_id = $1 AND status = 'ACTIVE' ORDER BY created_at DESC`;
+  const result = await pool.query(query, [user_id]);
+  return result.rows;
+};
+
+// Check if user already has a driving license of a specific type
+export const getDrivingLicenseByUserIdAndType = async (user_id: string, license_type: string): Promise<DrivingLicense | null> => {
+  const query = `SELECT * FROM driving_licenses WHERE user_id = $1 AND license_type = $2 AND status = 'ACTIVE'`;
+  const result = await pool.query(query, [user_id, license_type]);
+  return result.rows[0] || null;
+};
+
 // Get driving license by DL number
 export const getDrivingLicenseByNumber = async (dl_number: string): Promise<DrivingLicense | null> => {
   const query = `SELECT * FROM driving_licenses WHERE dl_number = $1`;
